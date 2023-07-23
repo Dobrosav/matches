@@ -2,8 +2,8 @@ package com.dobrosav.matches.db.entities;
 
 import jakarta.persistence.*;
 
-@Entity
 @Table(name = "users")
+@Entity
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,12 +21,14 @@ public class User {
     @Column(name = "admin")
     private Boolean admin;
     @Column(name = "sex")
-    private Character sex;
+    private String sex;
+    @Column(name = "username")
+    private String username;
 
     public User() {
     }
 
-    public User(String name, String surname, String mail, String password, Boolean premium, Boolean admin, Character sex) {
+    public User(String name, String surname, String mail, String password, Boolean premium, Boolean admin, String sex, String username) {
         this.name = name;
         this.surname = surname;
         this.mail = mail;
@@ -34,10 +36,11 @@ public class User {
         this.premium = premium;
         this.admin = admin;
         this.sex = sex;
+        this.username = username;
     }
 
-    public User createDefaultUser(String name, String surname, String mail, String password, Character sex) {
-        return new User(name, surname, mail, password, false, false, sex);
+    public static User createDefaultUser(String name, String surname, String mail, String username, String password, String sex) {
+        return new User(name, surname, mail, password, false, false, sex, username);
     }
 
     public Integer getId() {
@@ -96,12 +99,20 @@ public class User {
         this.admin = admin;
     }
 
-    public Character getSex() {
+    public String getSex() {
         return sex;
     }
 
-    public void setSex(Character sex) {
+    public void setSex(String sex) {
         this.sex = sex;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     @Override
@@ -115,6 +126,7 @@ public class User {
                 ", premium=" + premium +
                 ", admin=" + admin +
                 ", sex=" + sex +
+                ", username='" + username + '\'' +
                 '}';
     }
 }
