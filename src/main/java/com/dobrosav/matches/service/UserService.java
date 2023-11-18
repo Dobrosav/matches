@@ -9,6 +9,8 @@ import com.dobrosav.matches.model.pojo.UserRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class UserService {
     @Autowired
@@ -17,7 +19,7 @@ public class UserService {
     public SuccessResult createDefaultUser(UserRequest request) {
         SuccessResult successResult = new SuccessResult();
         if (userRepo.findByMail(request.getMail()).isEmpty() && userRepo.findByUsername(request.getSurname()).isEmpty()) {
-            User user = User.createDefaultUser(request.getName(), request.getSurname(), request.getMail(), request.getUsername(), request.getPassword(), request.getSex());
+            User user = User.createDefaultUser(request.getName(), request.getSurname(), request.getMail(), request.getUsername(), request.getPassword(), request.getSex(), request.getDateOfBirth(), request.getDisabilities());
             userRepo.save(user);
             successResult.setResult(true);
         } else
@@ -39,4 +41,5 @@ public class UserService {
         loginWrapper.setResult(successResult);
         return loginWrapper;
     }
+
 }

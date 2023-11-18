@@ -2,6 +2,8 @@ package com.dobrosav.matches.db.entities;
 
 import jakarta.persistence.*;
 
+import java.util.Date;
+
 @Table(name = "users")
 @Entity
 public class User {
@@ -24,11 +26,15 @@ public class User {
     private String sex;
     @Column(name = "username")
     private String username;
+    @Column(name = "dateoffbrtih")
+    private Date dateOfBirth;
+    @Column(name = "disabilty")
+    private String disability;
 
     public User() {
     }
 
-    public User(String name, String surname, String mail, String password, Boolean premium, Boolean admin, String sex, String username) {
+    public User(String name, String surname, String mail, String password, Boolean premium, Boolean admin, String sex, String username, Date dateOfBirth, String disability) {
         this.name = name;
         this.surname = surname;
         this.mail = mail;
@@ -37,10 +43,12 @@ public class User {
         this.admin = admin;
         this.sex = sex;
         this.username = username;
+        this.dateOfBirth = dateOfBirth;
+        this.disability = disability;
     }
 
-    public static User createDefaultUser(String name, String surname, String mail, String username, String password, String sex) {
-        return new User(name, surname, mail, password, false, false, sex, username);
+    public static User createDefaultUser(String name, String surname, String mail, String username, String password, String sex, Date dateOfBirth, String disability) {
+        return new User(name, surname, mail, password, false, false, sex, username, dateOfBirth, disability);
     }
 
     public Integer getId() {

@@ -2,6 +2,7 @@ package com.dobrosav.matches.model.pojo;
 
 
 import java.io.Serializable;
+import java.util.Date;
 
 public class UserRequest implements Serializable {
     private String name;
@@ -10,7 +11,8 @@ public class UserRequest implements Serializable {
     private String username;
     private String password;
     private String sex;
-
+    private Date dateOfBirth;
+    private String disabilities;
     public UserRequest() {
     }
 
@@ -62,6 +64,22 @@ public class UserRequest implements Serializable {
         this.sex = sex;
     }
 
+    public Date getDateOfBirth() {
+        return dateOfBirth;
+    }
+
+    public void setDateOfBirth(Date dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
+    }
+
+    public String getDisabilities() {
+        return disabilities;
+    }
+
+    public void setDisabilities(String disabilities) {
+        this.disabilities = disabilities;
+    }
+
     @Override
     public String toString() {
         return "UserRequest{" +
@@ -70,7 +88,9 @@ public class UserRequest implements Serializable {
                 ", mail='" + mail + '\'' +
                 ", username='" + username + '\'' +
                 ", password='" + password + '\'' +
-                ", sex=" + sex +
+                ", sex='" + sex + '\'' +
+                ", dateOfBirth=" + dateOfBirth +
+                ", disabilities='" + disabilities + '\'' +
                 '}';
     }
 }
