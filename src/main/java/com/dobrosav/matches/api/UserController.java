@@ -1,4 +1,4 @@
-package com.dobrosav.matches.rest;
+package com.dobrosav.matches.api;
 
 import com.dobrosav.matches.model.pojo.LoginRequest;
 import com.dobrosav.matches.model.pojo.LoginWrapper;
