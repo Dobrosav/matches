@@ -6,6 +6,8 @@ import com.dobrosav.matches.model.pojo.LoginRequest;
 import com.dobrosav.matches.model.pojo.LoginWrapper;
 import com.dobrosav.matches.model.pojo.SuccessResult;
 import com.dobrosav.matches.model.pojo.UserRequest;
+import org.joda.time.DateTime;
+import org.joda.time.Years;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -31,15 +33,28 @@ public class UserService {
         LoginWrapper loginWrapper = new LoginWrapper();
         User user = userRepo.findByMailAndPassword(request.getMail(), request.getPassword());
         SuccessResult successResult = new SuccessResult();
-        if (user!=null){
+        if (user != null) {
             successResult.setResult(true);
             loginWrapper.setUser(user);
-        }
-        else {
+        } else {
             successResult.setResult(false);
         }
         loginWrapper.setResult(successResult);
         return loginWrapper;
     }
 
+    public List<User> findByAge(Integer begin, Integer end) throws Exception {
+        List<User> users;
+        if (end != null && end < begin)
+            throw new Exception();
+        users = userRepo.findAll();
+        if (end == null) {
+            users = users.stream().filter(user -> Years.yearsBetween(new DateTime(user.getDateOfBirth().getTime()), DateTime.now()).getYears() >= begin).toList();
+        } else
+            users = users.stream().filter(user ->
+                            Years.yearsBetween(new DateTime(user.getDateOfBirth().getTime()), DateTime.now()).getYears() >= begin)
+                    .filter(user -> Years.yearsBetween(new DateTime(user.getDateOfBirth().getTime()), DateTime.now()).getYears() <= end).
+                    toList();
+        return users;
+    }
 }

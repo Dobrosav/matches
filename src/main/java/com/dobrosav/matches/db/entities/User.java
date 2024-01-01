@@ -123,6 +123,22 @@ public class User {
         this.username = username;
     }
 
+    public Date getDateOfBirth() {
+        return dateOfBirth;
+    }
+
+    public void setDateOfBirth(Date dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
+    }
+
+    public String getDisability() {
+        return disability;
+    }
+
+    public void setDisability(String disability) {
+        this.disability = disability;
+    }
+
     @Override
     public String toString() {
         return "User{" +
