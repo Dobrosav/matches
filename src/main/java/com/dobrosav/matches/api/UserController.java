@@ -3,7 +3,6 @@ package com.dobrosav.matches.api;
 import com.dobrosav.matches.db.entities.User;
 import com.dobrosav.matches.model.pojo.LoginRequest;
 import com.dobrosav.matches.model.pojo.LoginWrapper;
-import com.dobrosav.matches.model.pojo.SuccessResult;
 import com.dobrosav.matches.model.pojo.UserRequest;
 import com.dobrosav.matches.service.UserService;
 import org.slf4j.Logger;
@@ -22,11 +21,16 @@ public class UserController {
     private static final Logger log = LoggerFactory.getLogger(UserController.class);
 
     @RequestMapping(value = "matches/users", method = RequestMethod.POST)
-    public ResponseEntity<SuccessResult> creaateDefaultUser(@RequestBody UserRequest request) {
+    public User createDefaultUser(@RequestBody UserRequest request) throws Exception {
         long startTime = System.currentTimeMillis();
-        SuccessResult result = userService.createDefaultUser(request);
-        log.info("request={} result={} createDefaultUser executed in {}ms", request, result, System.currentTimeMillis() - startTime);
-        return new ResponseEntity(result, HttpStatus.OK);
+
+        log.info("request={}  createDefaultUser executed in {}ms", request, System.currentTimeMillis() - startTime);
+        return userService.createDefaultUser(request);
+    }
+
+    @RequestMapping(value = "matches/users/{mail}", method = RequestMethod.GET)
+    public User findByMail(@PathVariable("mail") String mail) {
+        return userService.findByMail(mail);
     }
 
     @RequestMapping(value = "matches/login/users", method = RequestMethod.POST)
@@ -41,7 +45,7 @@ public class UserController {
     public ResponseEntity<List<User>> getUserByAge(@RequestParam(name = "beginYear") Integer begin, @RequestParam(name = "endYear", required = false) Integer end) throws Exception {
         long startTime = System.currentTimeMillis();
         List<User> users = userService.findByAge(begin, end);
-        return new ResponseEntity(users,HttpStatus.OK );
+        return new ResponseEntity(users, HttpStatus.OK);
     }
 
 }

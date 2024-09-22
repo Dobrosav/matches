@@ -13,6 +13,7 @@ public class UserRequest implements Serializable {
     private String sex;
     private Date dateOfBirth;
     private String disabilities;
+
     public UserRequest() {
     }
 

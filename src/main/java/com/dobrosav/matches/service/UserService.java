@@ -9,6 +9,8 @@ import com.dobrosav.matches.model.pojo.UserRequest;
 import org.joda.time.DateTime;
 import org.joda.time.Years;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,15 +20,21 @@ public class UserService {
     @Autowired
     private UserRepo userRepo;
 
-    public SuccessResult createDefaultUser(UserRequest request) {
-        SuccessResult successResult = new SuccessResult();
+    @CachePut(value = "users", key = "#request.mail")
+    public User createDefaultUser(UserRequest request) throws Exception {
         if (userRepo.findByMail(request.getMail()).isEmpty() && userRepo.findByUsername(request.getSurname()).isEmpty()) {
             User user = User.createDefaultUser(request.getName(), request.getSurname(), request.getMail(), request.getUsername(), request.getPassword(), request.getSex(), request.getDateOfBirth(), request.getDisabilities());
             userRepo.save(user);
-            successResult.setResult(true);
-        } else
-            successResult.setResult(false);
-        return successResult;
+            return user;
+
+        } else {
+            throw new Exception("User Exist");
+        }
+    }
+
+    @Cacheable(value = "users", key = "#mail")
+    public User findByMail(String mail) {
+        return userRepo.findByMail(mail).get(0);
     }
 
     public LoginWrapper login(LoginRequest request) {
