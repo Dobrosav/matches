@@ -3,6 +3,7 @@ package com.dobrosav.matches.api;
 import com.dobrosav.matches.db.entities.User;
 import com.dobrosav.matches.model.pojo.LoginRequest;
 import com.dobrosav.matches.model.pojo.LoginWrapper;
+import com.dobrosav.matches.model.pojo.SuccessResult;
 import com.dobrosav.matches.model.pojo.UserRequest;
 import com.dobrosav.matches.service.UserService;
 import org.slf4j.Logger;
@@ -31,6 +32,13 @@ public class UserController {
     @RequestMapping(value = "matches/users/{mail}", method = RequestMethod.GET)
     public User findByMail(@PathVariable("mail") String mail) {
         return userService.findByMail(mail);
+    }
+    @RequestMapping(value = "matches/users/{mail}", method = RequestMethod.DELETE)
+    public SuccessResult delete(@PathVariable("mail") String mail) {
+        SuccessResult successResult= new SuccessResult();
+        userService.deleteUser(mail);
+        successResult.setResult(true);
+        return successResult;
     }
 
     @RequestMapping(value = "matches/login/users", method = RequestMethod.POST)
