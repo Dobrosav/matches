@@ -9,6 +9,7 @@ import com.dobrosav.matches.model.pojo.UserRequest;
 import org.joda.time.DateTime;
 import org.joda.time.Years;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -36,7 +37,11 @@ public class UserService {
     public User findByMail(String mail) {
         return userRepo.findByMail(mail).get(0);
     }
-
+    @CacheEvict(value = "users", key = "#mail")
+    public void deleteUser(String mail){
+        User deletedUser=findByMail(mail);
+        userRepo.delete(deletedUser);
+    }
     public LoginWrapper login(LoginRequest request) {
         LoginWrapper loginWrapper = new LoginWrapper();
         User user = userRepo.findByMailAndPassword(request.getMail(), request.getPassword());
