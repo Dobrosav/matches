@@ -8,10 +8,15 @@ services:
     depends_on:
       mysqldb:
         condition: service_healthy
+      cache:
+        condition: service_healthy
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysqldb:3306/${MYSQL_DATABASE}
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=${MYSQL_PASSWORD}
+      - SPRING_REDIS_HOST=${CACHE_HOST}
+      - SPRING_REDIS_PORT=${CACHE_PORT}
+      - SPRING_REDIS_DATABASE=${CACHE_DATABASE}
     networks:
       - springboot-mysql-network
   mysqldb:
@@ -30,8 +35,22 @@ services:
       retries: 10
       interval: 3s
       timeout: 30s
+  cache:
+    image: redis:latest
+    ports:
+      - 6379:6379
+    networks:
+      - springboot-mysql-network
+    volumes:
+      - cache:/var/cache
+    healthcheck:
+      test: [ "CMD-SHELL", "redis-cli -h 127.0.0.1 ping | grep 'PONG' || exit 1" ]
+      interval: 10s
+      timeout: 30s
+      retries: 10
 volumes:
   mysql-data:
+  cache:
 networks:
   springboot-mysql-network:
     name: springboot-mysql-network
