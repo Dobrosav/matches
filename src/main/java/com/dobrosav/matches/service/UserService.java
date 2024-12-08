@@ -37,11 +37,13 @@ public class UserService {
     public User findByMail(String mail) {
         return userRepo.findByMail(mail).get(0);
     }
+
     @CacheEvict(value = "users", key = "#mail")
-    public void deleteUser(String mail){
-        User deletedUser=findByMail(mail);
+    public void deleteUser(String mail) {
+        User deletedUser = findByMail(mail);
         userRepo.delete(deletedUser);
     }
+
     public LoginWrapper login(LoginRequest request) {
         LoginWrapper loginWrapper = new LoginWrapper();
         User user = userRepo.findByMailAndPassword(request.getMail(), request.getPassword());
