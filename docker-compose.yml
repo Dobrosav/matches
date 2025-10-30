@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    restart: unless-stopped
     ports:
       - 8080:8080
     depends_on:
@@ -14,40 +15,49 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysqldb:3306/${MYSQL_DATABASE}
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=${MYSQL_PASSWORD}
-      - SPRING_REDIS_HOST=${CACHE_HOST}
-      - SPRING_REDIS_PORT=${CACHE_PORT}
-      - SPRING_REDIS_DATABASE=${CACHE_DATABASE}
+      - SPRING_DATA_REDIS_HOST=cache
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_DATA_REDIS_DATABASE=0
+      - SPRING_DATA_REDIS_TIMEOUT=60000
+      - SPRING_CACHE_TYPE=redis
+      - SPRING_DATA_REDIS_CONNECT-TIMEOUT=10000
     networks:
       - springboot-mysql-network
   mysqldb:
     image: mysql:8.0.33
+    restart: unless-stopped
     ports:
       - 3306:3306
     environment:
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
-      - MYSQL_ROOT_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-matches_db}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_PASSWORD:-rootpassword}
+      - MYSQL_ALLOW_EMPTY_PASSWORD=no
     volumes:
       - mysql-data:/var/lib/mysql
     networks:
       - springboot-mysql-network
     healthcheck:
-      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u", "root", "-p${MYSQL_PASSWORD:-rootpassword}"]
       retries: 10
-      interval: 3s
+      interval: 5s
       timeout: 30s
+      start_period: 30s
   cache:
     image: redis:latest
+    restart: unless-stopped
+    command: redis-server --bind 0.0.0.0 --protected-mode no
     ports:
       - 6379:6379
     networks:
       - springboot-mysql-network
     volumes:
-      - cache:/var/cache
+      - cache:/data
     healthcheck:
-      test: [ "CMD-SHELL", "redis-cli -h 127.0.0.1 ping | grep 'PONG' || exit 1" ]
-      interval: 10s
-      timeout: 30s
-      retries: 10
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 3s
+      timeout: 3s
+      retries: 15
+      start_period: 5s
 volumes:
   mysql-data:
   cache:
