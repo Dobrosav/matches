@@ -1,4 +1,4 @@
-package com.dobrosav.matches.model.pojo;
+package com.dobrosav.matches.api.model.request;
 
 
 import java.io.Serializable;
@@ -16,6 +16,18 @@ public class UserRequest implements Serializable {
 
     public UserRequest() {
     }
+
+    public UserRequest(String name, String surname, String mail, String username, String password, String sex, Date dateOfBirth, String disabilities) {
+        this.name = name;
+        this.surname = surname;
+        this.mail = mail;
+        this.username = username;
+        this.password = password;
+        this.sex = sex;
+        this.dateOfBirth = dateOfBirth;
+        this.disabilities = disabilities;
+    }
+
 
     public String getName() {
         return name;

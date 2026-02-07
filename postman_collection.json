@@ -1,0 +1,157 @@
+{
+    "info": {
+        "name": "Matches API",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "User Management",
+            "item": [
+                {
+                    "name": "Create User",
+                    "request": {
+                        "method": "POST",
+                        "header": [{"key": "Content-Type", "value": "application/json"}],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"John\",\n  \"surname\": \"Doe\",\n  \"mail\": \"john.doe@example.com\",\n  \"username\": \"johndoe\",\n  \"password\": \"password123\",\n  \"sex\": \"M\",\n  \"dateOfBirth\": \"1990-01-15T12:00:00.000Z\",\n  \"disabilities\": \"\"\n}"
+                        },
+                        "url": "http://localhost:8080/matches/users"
+                    }
+                },
+                {
+                    "name": "Get User by Mail",
+                    "request": {
+                        "method": "GET",
+                        "url": "http://localhost:8080/matches/users/john.doe@example.com"
+                    }
+                },
+                {
+                    "name": "Login",
+                    "request": {
+                        "method": "POST",
+                        "header": [{"key": "Content-Type", "value": "application/json"}],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"mail\": \"john.doe@example.com\",\n  \"password\": \"password123\"\n}"
+                        },
+                        "url": "http://localhost:8080/matches/login/users"
+                    }
+                },
+                {
+                    "name": "Update Preferences",
+                    "request": {
+                        "method": "PUT",
+                        "header": [{"key": "Content-Type", "value": "application/json"}],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"targetGender\": \"F\",\n  \"minAge\": 25,\n  \"maxAge\": 35\n}"
+                        },
+                        "url": "http://localhost:8080/matches/users/john.doe@example.com/preferences"
+                    }
+                },
+                {
+                    "name": "Set Premium",
+                    "request": {
+                        "method": "PUT",
+                        "url": "http://localhost:8080/matches/users/john.doe@example.com/premium?isPremium=true"
+                    }
+                },
+                 {
+                    "name": "Search Users",
+                    "request": {
+                        "method": "GET",
+                        "url": "http://localhost:8080/matches/users/john.doe@example.com/search"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Matching",
+            "item": [
+                {
+                    "name": "Get Feed",
+                    "request": {
+                        "method": "GET",
+                        "url": "http://localhost:8080/matches/users/john.doe@example.com/feed"
+                    }
+                },
+                {
+                    "name": "Like User",
+                    "request": {
+                        "method": "POST",
+                        "url": "http://localhost:8080/matches/users/john.doe@example.com/like/2"
+                    }
+                },
+                {
+                    "name": "Dislike User",
+                    "request": {
+                        "method": "POST",
+                        "url": "http://localhost:8080/matches/users/john.doe@example.com/dislike/3"
+                    }
+                },
+                {
+                    "name": "Get Matches",
+                    "request": {
+                        "method": "GET",
+                        "url": "http://localhost:8080/matches/users/john.doe@example.com/matches"
+                    }
+                },
+                {
+                    "name": "Get Likers (Premium)",
+                    "request": {
+                        "method": "GET",
+                        "url": "http://localhost:8080/matches/users/john.doe@example.com/likers"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Images",
+            "item": [
+                {
+                    "name": "Upload Image",
+                    "request": {
+                        "method": "POST",
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [{"key": "file", "type": "file", "src": []}]
+                        },
+                        "url": "http://localhost:8080/matches/users/john.doe@example.com/images"
+                    }
+                },
+                {
+                    "name": "Set Profile Image",
+                    "request": {
+                        "method": "PUT",
+                        "url": "http://localhost:8080/matches/users/john.doe@example.com/images/1/profile"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Chat",
+            "item": [
+                 {
+                    "name": "Send Chat Message",
+                    "request": {
+                        "method": "POST",
+                        "header": [{"key": "Content-Type", "value": "application/json"}],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"senderId\": 3,\n  \"content\": \"Hello from Postman!\"\n}"
+                        },
+                        "url": "http://localhost:8080/matches/matches/1/messages"
+                    }
+                },
+                {
+                    "name": "Get Chat History",
+                    "request": {
+                        "method": "GET",
+                        "url": "http://localhost:8080/matches/matches/1/messages"
+                    }
+                }
+            ]
+        }
+    ]
+}

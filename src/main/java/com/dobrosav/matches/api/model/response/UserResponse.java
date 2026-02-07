@@ -1,76 +1,41 @@
-package com.dobrosav.matches.db.entities;
+package com.dobrosav.matches.api.model.response;
 
-import jakarta.persistence.*;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.Serializable;
 import java.util.Date;
 
-
-@Table(name = "users")
-@Entity
-public class User implements Serializable {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class UserResponse implements Serializable {
     private Integer id;
-    @Column(name = "name")
     private String name;
-    @Column(name = "surname")
     private String surname;
-    @Column(name = "mail")
     private String mail;
-    @Column(name = "password")
-    @JsonIgnore
-    private String password;
-    @Column(name = "premium")
     private Boolean premium;
-
-    @Column(name = "admin")
     private Boolean admin;
-    @Column(name = "sex")
     private String sex;
-    @Column(name = "username")
     private String username;
-    @Column(name = "dateoffbrtih")
     private Date dateOfBirth;
-    @Column(name = "disabilty")
     private String disability;
-
-    @Column(name = "location")
     private String location;
-
-    @Column(name = "bio", length = 1024)
     private String bio;
-
-    @Column(name = "interests")
     private String interests;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private UserPreferences preferences;
-
-    public User() {
+    public UserResponse() {
     }
 
-    public User(String name, String surname, String mail, String password, Boolean premium, Boolean admin, String sex, String username, Date dateOfBirth, String disability) {
+    public UserResponse(Integer id, String name, String surname, String mail, Boolean premium, Boolean admin, String sex, String username, Date dateOfBirth, String disability, String location, String bio, String interests) {
+        this.id = id;
         this.name = name;
         this.surname = surname;
         this.mail = mail;
-        this.password = password;
         this.premium = premium;
         this.admin = admin;
         this.sex = sex;
         this.username = username;
         this.dateOfBirth = dateOfBirth;
         this.disability = disability;
-        this.location = "";
-        this.bio = "";
-        this.interests = "";
+        this.location = location;
+        this.bio = bio;
+        this.interests = interests;
     }
-
-    public static User createDefaultUser(String name, String surname, String mail, String username, String password, String sex, Date dateOfBirth, String disability) {
-        return new User(name, surname, mail, password, false, false, sex, username, dateOfBirth, disability);
-    }
-
 
     public Integer getId() {
         return id;
@@ -102,14 +67,6 @@ public class User implements Serializable {
 
     public void setMail(String mail) {
         this.mail = mail;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
     }
 
     public Boolean getPremium() {
@@ -182,29 +139,5 @@ public class User implements Serializable {
 
     public void setInterests(String interests) {
         this.interests = interests;
-    }
-
-    public UserPreferences getPreferences() {
-        return preferences;
-    }
-
-    public void setPreferences(UserPreferences preferences) {
-        this.preferences = preferences;
-    }
-
-
-    @Override
-    public String toString() {
-        return "User{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", surname='" + surname + '\'' +
-                ", mail='" + mail + '\'' +
-                ", password='" + password + '\'' +
-                ", premium=" + premium +
-                ", admin=" + admin +
-                ", sex=" + sex +
-                ", username='" + username + '\'' +
-                '}';
     }
 }

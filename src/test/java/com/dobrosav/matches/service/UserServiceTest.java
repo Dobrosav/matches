@@ -1,0 +1,243 @@
+package com.dobrosav.matches.service;
+
+import com.dobrosav.matches.api.model.request.UserRequest;
+import com.dobrosav.matches.api.model.response.MatchResponse;
+import com.dobrosav.matches.api.model.response.UserImageResponse;
+import com.dobrosav.matches.api.model.response.UserResponse;
+import com.dobrosav.matches.db.entities.User;
+import com.dobrosav.matches.db.repos.UserImageRepo;
+import com.dobrosav.matches.db.repos.UserLikeRepo;
+import com.dobrosav.matches.db.repos.UserMatchRepo;
+import com.dobrosav.matches.db.repos.UserRepo;
+import com.dobrosav.matches.exception.ServiceException;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+
+import java.util.Date;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@SpringBootTest
+@Testcontainers
+public class UserServiceTest {
+
+    @Container
+    @ServiceConnection
+    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0.33");
+
+    @Container
+    static GenericContainer<?> redis = new GenericContainer<>("redis:7.2")
+            .withExposedPorts(6379);
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private UserRepo userRepo;
+
+    @Autowired
+    private UserImageRepo userImageRepo;
+
+    @Autowired
+    private UserLikeRepo userLikeRepo;
+
+    @Autowired
+    private UserMatchRepo userMatchRepo;
+
+    @DynamicPropertySource
+    static void configureProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", mysql::getJdbcUrl);
+        registry.add("spring.datasource.username", mysql::getUsername);
+        registry.add("spring.datasource.password", mysql::getPassword);
+        registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
+
+        registry.add("spring.data.redis.host", redis::getHost);
+        registry.add("spring.data.redis.port", () -> String.valueOf(redis.getMappedPort(6379)));
+    }
+
+    @BeforeEach
+    void setUp() {
+        userImageRepo.deleteAll();
+        userLikeRepo.deleteAll();
+        userMatchRepo.deleteAll();
+        userRepo.deleteAll();
+    }
+    
+    @AfterEach
+    void tearDown() {
+        userImageRepo.deleteAll();
+        userLikeRepo.deleteAll();
+        userMatchRepo.deleteAll();
+        userRepo.deleteAll();
+    }
+
+    @Test
+    void testUploadImage() throws Exception {
+        UserRequest userRequest = new UserRequest();
+        userRequest.setName("Test");
+        userRequest.setSurname("User");
+        userRequest.setMail("test@example.com");
+        userRequest.setUsername("testuser");
+        userRequest.setPassword("password");
+        userRequest.setSex("M");
+        userRequest.setDateOfBirth(new Date());
+
+        userService.createDefaultUser(userRequest);
+
+        MockMultipartFile file = new MockMultipartFile("file", "test.jpg", "image/jpeg", "test image content".getBytes());
+        UserImageResponse response = userService.uploadImage("test@example.com", file);
+
+        assertNotNull(response);
+        assertEquals("test.jpg", response.getFileName());
+        assertTrue(response.getProfileImage());
+
+        List<UserImageResponse> images = userService.getUserImages("test@example.com");
+        assertEquals(1, images.size());
+    }
+
+    @Test
+    void testUploadMaxImages() throws Exception {
+        UserRequest userRequest = new UserRequest();
+        userRequest.setName("Test");
+        userRequest.setSurname("User");
+        userRequest.setMail("test@example.com");
+        userRequest.setUsername("testuser");
+        userRequest.setPassword("password");
+        userRequest.setSex("M");
+        userRequest.setDateOfBirth(new Date());
+
+        userService.createDefaultUser(userRequest);
+
+        MockMultipartFile file = new MockMultipartFile("file", "test.jpg", "image/jpeg", "test image content".getBytes());
+        userService.uploadImage("test@example.com", file);
+        userService.uploadImage("test@example.com", file);
+        userService.uploadImage("test@example.com", file);
+
+        assertThrows(ServiceException.class, () -> userService.uploadImage("test@example.com", file));
+    }
+
+    @Test
+    void testLikeAndMatch() throws Exception {
+        UserRequest user1Request = new UserRequest();
+        user1Request.setName("User1");
+        user1Request.setSurname("One");
+        user1Request.setMail("user1@example.com");
+        user1Request.setUsername("user1");
+        user1Request.setPassword("password");
+        user1Request.setSex("M");
+        user1Request.setDateOfBirth(new Date());
+
+        UserRequest user2Request = new UserRequest();
+        user2Request.setName("User2");
+        user2Request.setSurname("Two");
+        user2Request.setMail("user2@example.com");
+        user2Request.setUsername("user2");
+        user2Request.setPassword("password");
+        user2Request.setSex("F");
+        user2Request.setDateOfBirth(new Date());
+
+        UserResponse user1 = userService.createDefaultUser(user1Request);
+        UserResponse user2 = userService.createDefaultUser(user2Request);
+
+        // User 1 likes User 2
+        boolean match1 = userService.likeUser("user1@example.com", user2.getId());
+        assertFalse(match1); // Not a match yet
+
+        // User 2 likes User 1
+        boolean match2 = userService.likeUser("user2@example.com", user1.getId());
+        assertTrue(match2); // Should be a match now
+
+        List<MatchResponse> matches1 = userService.getMatches("user1@example.com");
+        assertEquals(1, matches1.size());
+        assertEquals(user2.getId(), matches1.get(0).getOtherUser().getId());
+
+        List<MatchResponse> matches2 = userService.getMatches("user2@example.com");
+        assertEquals(1, matches2.size());
+        assertEquals(user1.getId(), matches2.get(0).getOtherUser().getId());
+    }
+
+    @Test
+    void testPasswordHashing() throws Exception {
+        UserRequest userRequest = new UserRequest();
+        userRequest.setName("Hash");
+        userRequest.setSurname("Test");
+        userRequest.setMail("hash@example.com");
+        userRequest.setUsername("hashtest");
+        userRequest.setPassword("plainpassword");
+        userRequest.setSex("M");
+        userRequest.setDateOfBirth(new Date());
+
+        userService.createDefaultUser(userRequest);
+
+        User user = userRepo.findByMail("hash@example.com");
+        assertNotNull(user);
+        assertNotEquals("plainpassword", user.getPassword());
+    }
+
+    @Test
+    void testFeedExclusions() throws Exception {
+        UserRequest mainUserReq = new UserRequest("Main", "User", "main@example.com", "mainuser", "p", "M", new Date(), "");
+        UserRequest likedUserReq = new UserRequest("Liked", "User", "liked@example.com", "likeduser", "p", "F", new Date(), "");
+        UserRequest dislikedUserReq = new UserRequest("Disliked", "User", "disliked@example.com", "dislikeduser", "p", "F", new Date(), "");
+        UserRequest otherUserReq = new UserRequest("Other", "User", "other@example.com", "otheruser", "p", "F", new Date(), "");
+
+        UserResponse mainUser = userService.createDefaultUser(mainUserReq);
+        UserResponse likedUser = userService.createDefaultUser(likedUserReq);
+        UserResponse dislikedUser = userService.createDefaultUser(dislikedUserReq);
+        userService.createDefaultUser(otherUserReq);
+
+        userService.likeUser(mainUser.getMail(), likedUser.getId());
+        userService.dislikeUser(mainUser.getMail(), dislikedUser.getId());
+        
+        List<UserResponse> feed = userService.getFeed(mainUser.getMail());
+        
+        assertEquals(1, feed.size());
+        assertEquals("other@example.com", feed.get(0).getMail());
+    }
+
+    @Test
+    void testPremiumFeatures() throws Exception {
+        UserRequest premiumUserReq = new UserRequest("Premium", "User", "premium@example.com", "premuser", "p", "M", new Date(), "");
+        UserRequest normalUserReq = new UserRequest("Normal", "User", "normal@example.com", "normuser", "p", "F", new Date(), "");
+
+        UserResponse premiumUser = userService.createDefaultUser(premiumUserReq);
+        UserResponse normalUser = userService.createDefaultUser(normalUserReq);
+        
+        userService.setPremium(premiumUser.getMail(), true);
+
+        // Test "who liked me"
+        userService.likeUser(normalUser.getMail(), premiumUser.getId());
+        
+        // Premium can see likers
+        List<UserResponse> likers = userService.getLikers(premiumUser.getMail());
+        assertEquals(1, likers.size());
+        assertEquals(normalUser.getId(), likers.get(0).getId());
+
+        // Normal user cannot
+        assertThrows(ServiceException.class, () -> userService.getLikers(normalUser.getMail()));
+
+        // Test like limit
+        for (int i = 0; i < 10; i++) {
+            UserRequest tempUserReq = new UserRequest("Temp"+i, "User", "temp"+i+"@example.com", "temp"+i, "p", "F", new Date(), "");
+            UserResponse tempUser = userService.createDefaultUser(tempUserReq);
+            userService.likeUser(normalUser.getMail(), tempUser.getId());
+        }
+        
+        UserRequest extraUserReq = new UserRequest("Extra", "User", "extra@example.com", "extra", "p", "F", new Date(), "");
+        UserResponse extraUser = userService.createDefaultUser(extraUserReq);
+        
+        assertThrows(ServiceException.class, () -> userService.likeUser(normalUser.getMail(), extraUser.getId()));
+    }
+}
