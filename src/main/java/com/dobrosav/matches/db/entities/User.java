@@ -2,8 +2,10 @@ package com.dobrosav.matches.db.entities;
 
 import jakarta.persistence.*;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.Serializable;
 import java.util.Date;
+
 
 @Table(name = "users")
 @Entity
@@ -18,9 +20,11 @@ public class User implements Serializable {
     @Column(name = "mail")
     private String mail;
     @Column(name = "password")
+    @JsonIgnore
     private String password;
     @Column(name = "premium")
     private Boolean premium;
+
     @Column(name = "admin")
     private Boolean admin;
     @Column(name = "sex")
@@ -31,6 +35,18 @@ public class User implements Serializable {
     private Date dateOfBirth;
     @Column(name = "disabilty")
     private String disability;
+
+    @Column(name = "location")
+    private String location;
+
+    @Column(name = "bio", length = 1024)
+    private String bio;
+
+    @Column(name = "interests")
+    private String interests;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private UserPreferences preferences;
 
     public User() {
     }
@@ -46,11 +62,15 @@ public class User implements Serializable {
         this.username = username;
         this.dateOfBirth = dateOfBirth;
         this.disability = disability;
+        this.location = "";
+        this.bio = "";
+        this.interests = "";
     }
 
     public static User createDefaultUser(String name, String surname, String mail, String username, String password, String sex, Date dateOfBirth, String disability) {
         return new User(name, surname, mail, password, false, false, sex, username, dateOfBirth, disability);
     }
+
 
     public Integer getId() {
         return id;
@@ -139,6 +159,39 @@ public class User implements Serializable {
     public void setDisability(String disability) {
         this.disability = disability;
     }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
+    }
+
+    public String getBio() {
+        return bio;
+    }
+
+    public void setBio(String bio) {
+        this.bio = bio;
+    }
+
+    public String getInterests() {
+        return interests;
+    }
+
+    public void setInterests(String interests) {
+        this.interests = interests;
+    }
+
+    public UserPreferences getPreferences() {
+        return preferences;
+    }
+
+    public void setPreferences(UserPreferences preferences) {
+        this.preferences = preferences;
+    }
+
 
     @Override
     public String toString() {

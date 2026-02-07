@@ -1,4 +1,4 @@
-package com.dobrosav.matches.api.model.res;
+package com.dobrosav.matches.api.model.response;
 
 import java.io.Serializable;
 
