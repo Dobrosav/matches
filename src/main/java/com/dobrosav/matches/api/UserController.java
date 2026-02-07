@@ -17,9 +17,15 @@ import java.util.List;
 
 @RestController
 public class UserController {
-    @Autowired
-    UserService userService;
+
     private static final Logger log = LoggerFactory.getLogger(UserController.class);
+
+    private final UserService userService;
+
+    @Autowired
+    public  UserController(UserService userService){
+            this.userService = userService;
+    }
 
     @RequestMapping(value = "matches/users", method = RequestMethod.POST)
     public User createDefaultUser(@RequestBody UserRequest request) throws Exception {
