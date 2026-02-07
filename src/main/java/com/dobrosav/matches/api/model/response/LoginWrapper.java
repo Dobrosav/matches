@@ -1,4 +1,4 @@
-package com.dobrosav.matches.api.model.res;
+package com.dobrosav.matches.api.model.response;
 
 import com.dobrosav.matches.db.entities.User;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -7,19 +7,20 @@ import java.io.Serializable;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class LoginWrapper implements Serializable {
-    private User user;
+    private UserResponse user;
     private SuccessResult result;
 
     public LoginWrapper() {
     }
 
-    public User getUser() {
+    public UserResponse getUser() {
         return user;
     }
 
-    public void setUser(User user) {
+    public void setUser(UserResponse user) {
         this.user = user;
     }
+
 
     public SuccessResult getResult() {
         return result;
