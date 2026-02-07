@@ -1,10 +1,10 @@
 package com.dobrosav.matches.api;
 
+import com.dobrosav.matches.api.model.req.LoginRequest;
+import com.dobrosav.matches.api.model.req.UserRequest;
+import com.dobrosav.matches.api.model.res.LoginWrapper;
+import com.dobrosav.matches.api.model.res.SuccessResult;
 import com.dobrosav.matches.db.entities.User;
-import com.dobrosav.matches.model.pojo.LoginRequest;
-import com.dobrosav.matches.model.pojo.LoginWrapper;
-import com.dobrosav.matches.model.pojo.SuccessResult;
-import com.dobrosav.matches.model.pojo.UserRequest;
 import com.dobrosav.matches.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,8 +23,8 @@ public class UserController {
     private final UserService userService;
 
     @Autowired
-    public  UserController(UserService userService){
-            this.userService = userService;
+    public UserController(UserService userService) {
+        this.userService = userService;
     }
 
     @RequestMapping(value = "matches/users", method = RequestMethod.POST)
@@ -39,9 +39,10 @@ public class UserController {
     public User findByMail(@PathVariable("mail") String mail) {
         return userService.findByMail(mail);
     }
+
     @RequestMapping(value = "matches/users/{mail}", method = RequestMethod.DELETE)
     public SuccessResult delete(@PathVariable("mail") String mail) {
-        SuccessResult successResult= new SuccessResult();
+        SuccessResult successResult = new SuccessResult();
         userService.deleteUser(mail);
         successResult.setResult(true);
         return successResult;

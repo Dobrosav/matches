@@ -1,11 +1,11 @@
 package com.dobrosav.matches.service;
 
+import com.dobrosav.matches.api.model.req.LoginRequest;
 import com.dobrosav.matches.db.entities.User;
 import com.dobrosav.matches.db.repos.UserRepo;
-import com.dobrosav.matches.model.pojo.LoginRequest;
-import com.dobrosav.matches.model.pojo.LoginWrapper;
-import com.dobrosav.matches.model.pojo.SuccessResult;
-import com.dobrosav.matches.model.pojo.UserRequest;
+import com.dobrosav.matches.api.model.res.LoginWrapper;
+import com.dobrosav.matches.api.model.res.SuccessResult;
+import com.dobrosav.matches.api.model.req.UserRequest;
 import org.joda.time.DateTime;
 import org.joda.time.Years;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,10 +16,17 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+import static com.fasterxml.jackson.databind.type.LogicalType.DateTime;
+
 @Service
 public class UserService {
+
+    private final UserRepo userRepo;
+
     @Autowired
-    private UserRepo userRepo;
+    public UserService(UserRepo userRepo) {
+        this.userRepo = userRepo;
+    }
 
     @CachePut(value = "users", key = "#request.mail")
     public User createDefaultUser(UserRequest request) throws Exception {
@@ -60,8 +67,7 @@ public class UserService {
 
     public List<User> findByAge(Integer begin, Integer end) throws Exception {
         List<User> users;
-        if (end != null && end < begin)
-            throw new Exception();
+
         users = userRepo.findAll();
         if (end == null) {
             users = users.stream().filter(user -> Years.yearsBetween(new DateTime(user.getDateOfBirth().getTime()), DateTime.now()).getYears() >= begin).toList();

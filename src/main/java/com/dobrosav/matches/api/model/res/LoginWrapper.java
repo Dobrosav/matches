@@ -1,4 +1,4 @@
-package com.dobrosav.matches.model.pojo;
+package com.dobrosav.matches.api.model.res;
 
 import com.dobrosav.matches.db.entities.User;
 import com.fasterxml.jackson.annotation.JsonInclude;
