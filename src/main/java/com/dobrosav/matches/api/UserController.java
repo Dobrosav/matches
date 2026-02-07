@@ -11,6 +11,7 @@ import com.dobrosav.matches.api.model.response.SuccessResult;
 
 import com.dobrosav.matches.api.model.response.UserImageResponse;
 import com.dobrosav.matches.api.model.response.UserResponse;
+import com.dobrosav.matches.api.model.response.ChatMessageResponse;
 import com.dobrosav.matches.db.entities.ChatMessage;
 import com.dobrosav.matches.db.entities.User;
 import com.dobrosav.matches.db.entities.UserImage;
@@ -152,12 +153,12 @@ public class UserController {
     }
 
     @RequestMapping(value = "matches/matches/{matchId}/messages", method = RequestMethod.POST)
-    public ResponseEntity<ChatMessage> sendChatMessage(@PathVariable Integer matchId, @RequestBody ChatMessageRequest request) {
+    public ResponseEntity<ChatMessageResponse> sendChatMessage(@PathVariable Integer matchId, @RequestBody ChatMessageRequest request) {
         return new ResponseEntity<>(chatService.saveMessage(matchId, request.getSenderId(), request.getContent()), HttpStatus.OK);
     }
 
     @RequestMapping(value = "matches/matches/{matchId}/messages", method = RequestMethod.GET)
-    public ResponseEntity<List<ChatMessage>> getChatHistory(@PathVariable Integer matchId) {
+    public ResponseEntity<List<ChatMessageResponse>> getChatHistory(@PathVariable Integer matchId) {
         return new ResponseEntity<>(chatService.getChatHistory(matchId), HttpStatus.OK);
     }
 
