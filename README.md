@@ -26,7 +26,7 @@ A Spring Boot application for a matching/dating service platform.
 ## Technologies
 
 *   **Java**: 21
-*   **Framework**: Spring Boot 3.5.3, Spring Security, Spring WebSockets
+*   **Framework**: Spring Boot 3.3.4, Spring Security, Spring WebSockets
 *   **Database**: MySQL 8
 *   **Cache**: Redis
 *   **Testing**: JUnit 5, Testcontainers
@@ -44,16 +44,22 @@ The application is configured to use MySQL and Redis. The default configuration 
 
 ## How to Run
 
-1.  **Clone the repository**
-2.  **Build the project**:
+This application is designed to run with Docker.
+
+1.  **Prerequisites**: Ensure you have Docker and Docker Compose installed.
+2.  **Build and Run**: From the root of the project, run the following command:
     ```bash
-    mvn clean install
+    docker compose up --build
     ```
-3.  **Run the application**:
-    ```bash
-    mvn spring-boot:run
-    ```
-    *Alternatively, you can run the application from your IDE.*
+    This command will:
+    *   Build the Spring Boot application using a multi-stage `Dockerfile`.
+    *   Start containers for the application, a MySQL database, and a Redis cache.
+    *   The application will be available at `http://localhost:8080`.
+
+To stop the application and all related services, run:
+```bash
+docker compose down
+```
 
 ## API Documentation
 
