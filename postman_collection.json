@@ -103,6 +103,40 @@
                         "method": "GET",
                         "url": "http://localhost:8080/matches/users/john.doe@example.com/likers"
                     }
+                },
+                {
+                    "name": "Get Filtered Feed",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "http://localhost:8080/matches/users/john.doe@example.com/filtered-feed?gender=F&minAge=22&maxAge=30",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "8080",
+                            "path": [
+                                "matches",
+                                "users",
+                                "john.doe@example.com",
+                                "filtered-feed"
+                            ],
+                            "query": [
+                                {
+                                    "key": "gender",
+                                    "value": "F"
+                                },
+                                {
+                                    "key": "minAge",
+                                    "value": "22"
+                                },
+                                {
+                                    "key": "maxAge",
+                                    "value": "30"
+                                }
+                            ]
+                        }
+                    }
                 }
             ]
         },

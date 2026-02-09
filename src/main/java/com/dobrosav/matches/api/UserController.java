@@ -152,6 +152,17 @@ public class UserController {
         return new ResponseEntity<>(userService.getFeed(mail), HttpStatus.OK);
     }
 
+    @RequestMapping(value = "matches/users/{mail}/filtered-feed", method = RequestMethod.GET)
+    public ResponseEntity<List<UserResponse>> getFilteredFeed(
+            @PathVariable("mail") String mail,
+            @RequestParam("gender") String gender,
+            @RequestParam("minAge") int minAge,
+            @RequestParam("maxAge") int maxAge
+    ) {
+        List<UserResponse> users = userService.getFilteredFeed(mail, gender, minAge, maxAge);
+        return new ResponseEntity<>(users, HttpStatus.OK);
+    }
+
     @RequestMapping(value = "matches/matches/{matchId}/messages", method = RequestMethod.POST)
     public ResponseEntity<ChatMessageResponse> sendChatMessage(@PathVariable Integer matchId, @RequestBody ChatMessageRequest request) {
         return new ResponseEntity<>(chatService.saveMessage(matchId, request.getSenderId(), request.getContent()), HttpStatus.OK);
