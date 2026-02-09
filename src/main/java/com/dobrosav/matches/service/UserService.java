@@ -34,6 +34,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Calendar;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 @Service
 public class UserService {
@@ -291,6 +295,32 @@ public class UserService {
 
         List<User> feedUsers = userRepo.findByIdNotIn(excludedUserIds);
         
+        return feedUsers.stream().map(userMapper::toDto).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<UserResponse> getFilteredFeed(String mail, String gender, int minAge, int maxAge) {
+        User currentUser = findByMail(mail);
+
+        List<Integer> excludedUserIds = new ArrayList<>();
+        excludedUserIds.add(currentUser.getId()); // Exclude self
+
+        userLikeRepo.findByLiker(currentUser).forEach(like -> excludedUserIds.add(like.getLiked().getId()));
+        userDislikeRepo.findByDisliker(currentUser).forEach(dislike -> excludedUserIds.add(dislike.getDisliked().getId()));
+        userMatchRepo.findAllMatchesForUser(currentUser).forEach(match -> {
+            excludedUserIds.add(match.getUser1().getId());
+            excludedUserIds.add(match.getUser2().getId());
+        });
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.YEAR, -minAge);
+        Date endDate = calendar.getTime();
+        calendar.add(Calendar.YEAR, -(maxAge - minAge));
+        Date startDate = calendar.getTime();
+
+        Pageable pageable = PageRequest.of(0, 25);
+        Page<User> feedUsers = userRepo.findFilteredFeed(excludedUserIds, gender, startDate, endDate, pageable);
+
         return feedUsers.stream().map(userMapper::toDto).collect(Collectors.toList());
     }
 
