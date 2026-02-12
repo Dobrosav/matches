@@ -79,7 +79,7 @@ public class ApiGlobalErrorHandler {
     @ResponseBody
     protected ApiErrorResponse handleException(Exception ex) {
         LOG.error("Occurred unexpected error", ex);
-        return new ApiErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value() + "." + "001 " + "." + ErrorType.UNRESOLVED_ERROR.getCode(), ErrorType.UNRESOLVED_ERROR.getMessage());
+        return new ApiErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value() + "." + "001" + "." + ErrorType.UNRESOLVED_ERROR.getCode(), ErrorType.UNRESOLVED_ERROR.getMessage());
     }
 
 }

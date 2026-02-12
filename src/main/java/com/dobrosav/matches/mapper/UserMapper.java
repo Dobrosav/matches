@@ -15,7 +15,7 @@ public class UserMapper {
                 user.getId(),
                 user.getName(),
                 user.getSurname(),
-                user.getMail(),
+                user.getEmail(),
                 user.getPremium(),
                 user.getAdmin(),
                 user.getSex(),

@@ -1,43 +1,38 @@
 package com.dobrosav.matches.service;
 
-import com.dobrosav.matches.api.model.request.LoginRequest;
-import com.dobrosav.matches.db.entities.User;
-import com.dobrosav.matches.db.repos.UserRepo;
-import com.dobrosav.matches.api.model.response.LoginWrapper;
-import com.dobrosav.matches.api.model.response.SuccessResult;
-import com.dobrosav.matches.api.model.request.UserRequest;
-import com.dobrosav.matches.exception.ErrorType;
-import com.dobrosav.matches.exception.ServiceException;
-import org.joda.time.DateTime;
-import org.joda.time.Years;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
-
-import com.dobrosav.matches.api.model.response.MatchResponse;
+import com.dobrosav.matches.api.model.request.ProfileUpdateRequest;
 import com.dobrosav.matches.api.model.request.UserPreferencesRequest;
+import com.dobrosav.matches.api.model.response.MatchResponse;
 import com.dobrosav.matches.api.model.response.UserImageResponse;
 import com.dobrosav.matches.api.model.response.UserResponse;
 import com.dobrosav.matches.db.entities.*;
 import com.dobrosav.matches.db.repos.*;
+import com.dobrosav.matches.db.repos.RefreshTokenRepository;
+import com.dobrosav.matches.exception.ErrorType;
+import com.dobrosav.matches.exception.ServiceException;
 import com.dobrosav.matches.mapper.UserMapper;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.Calendar;
+import org.joda.time.DateTime;
+import org.joda.time.Years;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -48,43 +43,28 @@ public class UserService {
     private final UserMatchRepo userMatchRepo;
     private final UserPreferencesRepo userPreferencesRepo;
     private final UserDislikeRepo userDislikeRepo;
+    private final RefreshTokenRepository refreshTokenRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final CacheManager cacheManager;
 
     @Autowired
-    public UserService(UserRepo userRepo, UserImageRepo userImageRepo, UserLikeRepo userLikeRepo, UserMatchRepo userMatchRepo, UserPreferencesRepo userPreferencesRepo, UserDislikeRepo userDislikeRepo, UserMapper userMapper, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepo userRepo, UserImageRepo userImageRepo, UserLikeRepo userLikeRepo, UserMatchRepo userMatchRepo, UserPreferencesRepo userPreferencesRepo, UserDislikeRepo userDislikeRepo, RefreshTokenRepository refreshTokenRepository, UserMapper userMapper, PasswordEncoder passwordEncoder, CacheManager cacheManager) {
         this.userRepo = userRepo;
         this.userImageRepo = userImageRepo;
         this.userLikeRepo = userLikeRepo;
         this.userMatchRepo = userMatchRepo;
         this.userPreferencesRepo = userPreferencesRepo;
         this.userDislikeRepo = userDislikeRepo;
+        this.refreshTokenRepository = refreshTokenRepository;
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
-    }
-
-    @CachePut(value = "users", key = "#request.mail")
-    public UserResponse createDefaultUser(UserRequest request) throws Exception {
-        if (userRepo.findByUsername(request.getSurname()).isEmpty() && userRepo.findByMail(request.getMail())==null) {
-            User user = User.createDefaultUser(request.getName(), request.getSurname(), request.getMail(), request.getUsername(), passwordEncoder.encode(request.getPassword()), request.getSex(), request.getDateOfBirth(), request.getDisabilities());
-            
-            UserPreferences preferences = new UserPreferences(user);
-            user.setPreferences(preferences);
-
-            userRepo.save(user);
-            return userMapper.toDto(user);
-
-        } else {
-            throw new ServiceException(ErrorType.USER_ALREADY_EXISTS, HttpStatus.CONFLICT);
-        }
+        this.cacheManager = cacheManager;
     }
 
     public User findByMail(String mail) {
-        User user = userRepo.findByMail(mail);
-        if (user == null) {
-            throw new ServiceException(ErrorType.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-        }
-        return user;
+        return userRepo.findByEmail(mail)
+                .orElseThrow(() -> new ServiceException(ErrorType.USER_NOT_FOUND, HttpStatus.NOT_FOUND));
     }
 
     @Cacheable(value = "users", key = "#mail")
@@ -92,24 +72,19 @@ public class UserService {
         return userMapper.toDto(findByMail(mail));
     }
 
-    @CacheEvict(value = "users", key = "#mail")
+    @Transactional
+    @CacheEvict(value = {"users", "feed", "matches"}, key = "#mail")
     public void deleteUser(String mail) {
-        User deletedUser = findByMail(mail);
-        userRepo.delete(deletedUser);
-    }
-
-    public LoginWrapper login(LoginRequest request) {
-        LoginWrapper loginWrapper = new LoginWrapper();
-        User user = userRepo.findByMail(request.getMail());
-        SuccessResult successResult = new SuccessResult();
-        if (user != null && passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            successResult.setResult(true);
-            loginWrapper.setUser(userMapper.toDto(user));
-        } else {
-            successResult.setResult(false);
-        }
-        loginWrapper.setResult(successResult);
-        return loginWrapper;
+        User user = findByMail(mail);
+        refreshTokenRepository.deleteByUser(user);
+        userImageRepo.deleteByUser(user);
+        userLikeRepo.deleteByLiker(user);
+        userLikeRepo.deleteByLiked(user);
+        userDislikeRepo.deleteByDisliker(user);
+        userDislikeRepo.deleteByDisliked(user);
+        userMatchRepo.deleteByUser1(user);
+        userMatchRepo.deleteByUser2(user);
+        userRepo.delete(user);
     }
 
     public List<UserResponse> findByAge(Integer begin, Integer end) throws Exception {
@@ -156,6 +131,7 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
+    @CacheEvict(value = "images", key = "#imageId")
     public void deleteImage(String mail, Integer imageId) {
         User user = findByMail(mail);
         UserImage image = userImageRepo.findByIdAndUser(imageId, user)
@@ -176,9 +152,10 @@ public class UserService {
         }
     }
 
+    @Transactional
     public void setProfileImage(String mail, Integer imageId) {
         User user = findByMail(mail);
-        
+
         // Ensure the image exists and belongs to the user
         UserImage newProfileImage = userImageRepo.findByIdAndUser(imageId, user)
                 .orElseThrow(() -> new ServiceException(ErrorType.IMAGE_NOT_FOUND, HttpStatus.NOT_FOUND));
@@ -188,6 +165,8 @@ public class UserService {
             if (!currentProfileImage.getId().equals(newProfileImage.getId())) {
                 currentProfileImage.setProfileImage(false);
                 userImageRepo.save(currentProfileImage);
+                // Evict cache for old profile image
+                Objects.requireNonNull(cacheManager.getCache("images")).evict(currentProfileImage.getId());
             }
         });
 
@@ -195,15 +174,19 @@ public class UserService {
         if (!Boolean.TRUE.equals(newProfileImage.getProfileImage())) {
             newProfileImage.setProfileImage(true);
             userImageRepo.save(newProfileImage);
+            // Evict cache for new profile image
+            Objects.requireNonNull(cacheManager.getCache("images")).evict(newProfileImage.getId());
         }
     }
 
+    @Cacheable(value = "images", key = "#imageId")
     public UserImage getImage(String mail, Integer imageId) {
         User user = findByMail(mail);
         return userImageRepo.findByIdAndUser(imageId, user)
                 .orElseThrow(() -> new ServiceException(ErrorType.IMAGE_NOT_FOUND, HttpStatus.NOT_FOUND));
     }
 
+    @CacheEvict(value = "feed", key = "#likerMail")
     public boolean likeUser(String likerMail, Integer likedUserId) {
         User liker = findByMail(likerMail);
 
@@ -232,12 +215,20 @@ public class UserService {
         if (userLikeRepo.findByLikerAndLiked(liked, liker).isPresent()) {
             UserMatch match = new UserMatch(liker, liked);
             userMatchRepo.save(match);
+            
+            // Invalidate matches cache for both users
+            Objects.requireNonNull(cacheManager.getCache("matches")).evict(likerMail);
+            Objects.requireNonNull(cacheManager.getCache("matches")).evict(liked.getEmail());
+            // Also invalidate feed for the liked user (so they don't see liker anymore in feed, if they haven't liked yet - but here they have)
+            // Actually, if it's a match, they have both liked each other, so they wouldn't be in each other's feed anyway.
+            
             return true;
         }
 
         return false;
     }
 
+    @Cacheable(value = "matches", key = "#mail")
     @Transactional(readOnly = true)
     public List<MatchResponse> getMatches(String mail) {
         User user = findByMail(mail);
@@ -249,6 +240,7 @@ public class UserService {
         }).collect(Collectors.toList());
     }
 
+    @CacheEvict(value = {"users", "feed"}, key = "#mail")
     @Transactional
     public UserResponse updatePreferences(String mail, UserPreferencesRequest request) {
         User user = findByMail(mail);
@@ -265,6 +257,7 @@ public class UserService {
         return userMapper.toDto(user);
     }
 
+    @CacheEvict(value = "feed", key = "#dislikerMail")
     public void dislikeUser(String dislikerMail, Integer dislikedUserId) {
         User disliker = findByMail(dislikerMail);
         User disliked = userRepo.findById(dislikedUserId)
@@ -274,19 +267,20 @@ public class UserService {
         userDislikeRepo.save(dislike);
     }
 
+    @Cacheable(value = "feed", key = "#mail")
     @Transactional(readOnly = true)
     public List<UserResponse> getFeed(String mail) {
         User currentUser = findByMail(mail);
-        
+
         List<Integer> excludedUserIds = new ArrayList<>();
         excludedUserIds.add(currentUser.getId()); // Exclude self
 
         // Exclude liked users
         userLikeRepo.findByLiker(currentUser).forEach(like -> excludedUserIds.add(like.getLiked().getId()));
-        
+
         // Exclude disliked users
         userDislikeRepo.findByDisliker(currentUser).forEach(dislike -> excludedUserIds.add(dislike.getDisliked().getId()));
-        
+
         // Exclude matched users
         userMatchRepo.findAllMatchesForUser(currentUser).forEach(match -> {
             excludedUserIds.add(match.getUser1().getId());
@@ -294,10 +288,11 @@ public class UserService {
         });
 
         List<User> feedUsers = userRepo.findByIdNotIn(excludedUserIds);
-        
+
         return feedUsers.stream().map(userMapper::toDto).collect(Collectors.toList());
     }
 
+    @Cacheable(value = "filtered-feed", key = "#mail + '-' + #gender + '-' + #minAge + '-' + #maxAge")
     @Transactional(readOnly = true)
     public List<UserResponse> getFilteredFeed(String mail, String gender, int minAge, int maxAge) {
         User currentUser = findByMail(mail);
@@ -359,10 +354,36 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
+    @CacheEvict(value = {"users", "feed"}, key = "#mail")
     @Transactional
     public void setPremium(String mail, boolean isPremium) {
         User user = findByMail(mail);
         user.setPremium(isPremium);
         userRepo.save(user);
+    }
+
+    public User findById(Integer id) {
+        return userRepo.findById(id)
+                .orElseThrow(() -> new ServiceException(ErrorType.USER_NOT_FOUND, HttpStatus.NOT_FOUND));
+    }
+
+    @Transactional
+    public User updateUserProfile(Integer id, ProfileUpdateRequest request) {
+        User user = findById(id);
+        if (request.getBio() != null) {
+            user.setBio(request.getBio());
+        }
+        if (request.getInterests() != null) {
+            user.setInterests(request.getInterests());
+        }
+        if (request.getLocation() != null) {
+            user.setLocation(request.getLocation());
+        }
+        User savedUser = userRepo.save(user);
+
+        // Manual eviction
+        Objects.requireNonNull(cacheManager.getCache("users")).evict(savedUser.getEmail());
+
+        return savedUser;
     }
 }

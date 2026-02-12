@@ -1,5 +1,7 @@
 package com.dobrosav.matches.api.model.response;
 
+import com.dobrosav.matches.db.entities.User;
+
 import java.io.Serializable;
 import java.util.Date;
 
@@ -7,7 +9,7 @@ public class UserResponse implements Serializable {
     private Integer id;
     private String name;
     private String surname;
-    private String mail;
+    private String email;
     private Boolean premium;
     private Boolean admin;
     private String sex;
@@ -21,11 +23,11 @@ public class UserResponse implements Serializable {
     public UserResponse() {
     }
 
-    public UserResponse(Integer id, String name, String surname, String mail, Boolean premium, Boolean admin, String sex, String username, Date dateOfBirth, String disability, String location, String bio, String interests) {
+    public UserResponse(Integer id, String name, String surname, String email, Boolean premium, Boolean admin, String sex, String username, Date dateOfBirth, String disability, String location, String bio, String interests) {
         this.id = id;
         this.name = name;
         this.surname = surname;
-        this.mail = mail;
+        this.email = email;
         this.premium = premium;
         this.admin = admin;
         this.sex = sex;
@@ -35,6 +37,22 @@ public class UserResponse implements Serializable {
         this.location = location;
         this.bio = bio;
         this.interests = interests;
+    }
+
+    public UserResponse(User user) {
+        this.id = user.getId();
+        this.name = user.getName();
+        this.surname = user.getSurname();
+        this.email = user.getEmail();
+        this.premium = user.getPremium();
+        this.admin = user.getAdmin();
+        this.sex = user.getSex();
+        this.username = user.getUsername();
+        this.dateOfBirth = user.getDateOfBirth();
+        this.disability = user.getDisability();
+        this.location = user.getLocation();
+        this.bio = user.getBio();
+        this.interests = user.getInterests();
     }
 
     public Integer getId() {
@@ -61,12 +79,12 @@ public class UserResponse implements Serializable {
         this.surname = surname;
     }
 
-    public String getMail() {
-        return mail;
+    public String getEmail() {
+        return email;
     }
 
-    public void setMail(String mail) {
-        this.mail = mail;
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public Boolean getPremium() {
