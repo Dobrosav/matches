@@ -1,5 +1,7 @@
 package com.dobrosav.matches.api.model.response;
 
+import com.dobrosav.matches.db.entities.User;
+
 import java.io.Serializable;
 import java.util.Date;
 
@@ -35,6 +37,22 @@ public class UserResponse implements Serializable {
         this.location = location;
         this.bio = bio;
         this.interests = interests;
+    }
+
+    public UserResponse(User user) {
+        this.id = user.getId();
+        this.name = user.getName();
+        this.surname = user.getSurname();
+        this.email = user.getEmail();
+        this.premium = user.getPremium();
+        this.admin = user.getAdmin();
+        this.sex = user.getSex();
+        this.username = user.getUsername();
+        this.dateOfBirth = user.getDateOfBirth();
+        this.disability = user.getDisability();
+        this.location = user.getLocation();
+        this.bio = user.getBio();
+        this.interests = user.getInterests();
     }
 
     public Integer getId() {

@@ -13,4 +13,7 @@ public interface UserMatchRepo extends JpaRepository<UserMatch, Integer> {
     
     @Query("SELECT m FROM UserMatch m WHERE m.user1 = ?1 OR m.user2 = ?1")
     List<UserMatch> findAllMatchesForUser(User user);
+
+    void deleteByUser1(User user);
+    void deleteByUser2(User user);
 }

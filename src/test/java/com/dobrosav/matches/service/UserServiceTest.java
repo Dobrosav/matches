@@ -5,10 +5,7 @@ import com.dobrosav.matches.api.model.response.MatchResponse;
 import com.dobrosav.matches.api.model.response.UserImageResponse;
 import com.dobrosav.matches.api.model.response.UserResponse;
 import com.dobrosav.matches.db.entities.User;
-import com.dobrosav.matches.db.repos.UserImageRepo;
-import com.dobrosav.matches.db.repos.UserLikeRepo;
-import com.dobrosav.matches.db.repos.UserMatchRepo;
-import com.dobrosav.matches.db.repos.UserRepo;
+import com.dobrosav.matches.db.repos.*;
 import com.dobrosav.matches.exception.ServiceException;
 import com.dobrosav.matches.security.AuthenticationService;
 import org.junit.jupiter.api.AfterEach;
@@ -44,7 +41,7 @@ public class UserServiceTest {
 
     @Autowired
     private UserService userService;
-    
+
     @Autowired
     private AuthenticationService authenticationService;
 
@@ -58,14 +55,26 @@ public class UserServiceTest {
     private UserLikeRepo userLikeRepo;
 
     @Autowired
+    private UserDislikeRepo userDislikeRepo;
+
+    @Autowired
     private UserMatchRepo userMatchRepo;
+
+    @Autowired
+    private ChatMessageRepo chatMessageRepo;
+
+    @Autowired
+    private UserPreferencesRepo userPreferencesRepo;
+
+    @Autowired
+    private RefreshTokenRepository refreshTokenRepo;
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", mysql::getJdbcUrl);
         registry.add("spring.datasource.username", mysql::getUsername);
         registry.add("spring.datasource.password", mysql::getPassword);
-        registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
+        registry.add("spring.jpa.hibernate.ddl-auto", () -> "update");
 
         registry.add("spring.data.redis.host", redis::getHost);
         registry.add("spring.data.redis.port", () -> String.valueOf(redis.getMappedPort(6379)));
@@ -73,17 +82,25 @@ public class UserServiceTest {
 
     @BeforeEach
     void setUp() {
-        userImageRepo.deleteAll();
+        chatMessageRepo.deleteAll();
+        userDislikeRepo.deleteAll();
         userLikeRepo.deleteAll();
         userMatchRepo.deleteAll();
+        userImageRepo.deleteAll();
+        refreshTokenRepo.deleteAll();
+        userPreferencesRepo.deleteAll();
         userRepo.deleteAll();
     }
-    
+
     @AfterEach
     void tearDown() {
-        userImageRepo.deleteAll();
+        chatMessageRepo.deleteAll();
+        userDislikeRepo.deleteAll();
         userLikeRepo.deleteAll();
         userMatchRepo.deleteAll();
+        userImageRepo.deleteAll();
+        refreshTokenRepo.deleteAll();
+        userPreferencesRepo.deleteAll();
         userRepo.deleteAll();
     }
 
@@ -204,7 +221,7 @@ public class UserServiceTest {
         authenticationService.register(likedUserReq);
         authenticationService.register(dislikedUserReq);
         authenticationService.register(otherUserReq);
-        
+
         User mainUser = userRepo.findByEmail("main@example.com").get();
         User likedUser = userRepo.findByEmail("liked@example.com").get();
         User dislikedUser = userRepo.findByEmail("disliked@example.com").get();
@@ -212,9 +229,9 @@ public class UserServiceTest {
 
         userService.likeUser(mainUser.getEmail(), likedUser.getId());
         userService.dislikeUser(mainUser.getEmail(), dislikedUser.getId());
-        
+
         List<UserResponse> feed = userService.getFeed(mainUser.getEmail());
-        
+
         assertEquals(1, feed.size());
         assertEquals("other@example.com", feed.get(0).getEmail());
     }
@@ -229,12 +246,12 @@ public class UserServiceTest {
         User premiumUser = userRepo.findByEmail("premium@example.com").get();
         User normalUser = userRepo.findByEmail("normal@example.com").get();
 
-        
+
         userService.setPremium(premiumUser.getEmail(), true);
 
         // Test "who liked me"
         userService.likeUser(normalUser.getEmail(), premiumUser.getId());
-        
+
         // Premium can see likers
         List<UserResponse> likers = userService.getLikers(premiumUser.getEmail());
         assertEquals(1, likers.size());
@@ -244,17 +261,17 @@ public class UserServiceTest {
         assertThrows(ServiceException.class, () -> userService.getLikers(normalUser.getEmail()));
 
         // Test like limit
-        for (int i = 0; i < 10; i++) {
-            UserRequest tempUserReq = new UserRequest("Temp"+i, "User", "temp"+i+"@example.com", "temp"+i, "p", "F", new Date(), "");
+        for (int i = 0; i < 9; i++) {
+            UserRequest tempUserReq = new UserRequest("Temp" + i, "User", "temp" + i + "@example.com", "temp" + i, "p", "F", new Date(), "");
             authenticationService.register(tempUserReq);
-            User tempUser = userRepo.findByEmail("temp"+i+"@example.com").get();
+            User tempUser = userRepo.findByEmail("temp" + i + "@example.com").get();
             userService.likeUser(normalUser.getEmail(), tempUser.getId());
         }
-        
+
         UserRequest extraUserReq = new UserRequest("Extra", "User", "extra@example.com", "extra", "p", "F", new Date(), "");
         authenticationService.register(extraUserReq);
         User extraUser = userRepo.findByEmail("extra@example.com").get();
-        
+
         assertThrows(ServiceException.class, () -> userService.likeUser(normalUser.getEmail(), extraUser.getId()));
     }
 }

@@ -10,4 +10,7 @@ import java.util.List;
 @Repository
 public interface UserDislikeRepo extends JpaRepository<UserDislike, Integer> {
     List<UserDislike> findByDisliker(User disliker);
+
+    void deleteByDisliker(User disliker);
+    void deleteByDisliked(User disliked);
 }

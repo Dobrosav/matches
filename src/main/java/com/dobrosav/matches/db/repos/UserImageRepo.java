@@ -14,4 +14,5 @@ public interface UserImageRepo extends JpaRepository<UserImage, Integer> {
     List<UserImage> findByUser(User user);
     Optional<UserImage> findByIdAndUser(Integer id, User user);
     Optional<UserImage> findByUserAndProfileImageTrue(User user);
+    void deleteByUser(User user);
 }

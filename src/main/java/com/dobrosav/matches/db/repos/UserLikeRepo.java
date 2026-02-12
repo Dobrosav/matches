@@ -14,4 +14,7 @@ public interface UserLikeRepo extends JpaRepository<UserLike, Integer> {
     List<UserLike> findByLiker(User liker);
     long countByLikerAndCreatedAtAfter(User liker, java.util.Date date);
     List<UserLike> findByLiked(User liked);
+
+    void deleteByLiker(User liker);
+    void deleteByLiked(User liked);
 }
