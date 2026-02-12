@@ -1,15 +1,20 @@
 package com.dobrosav.matches.db.entities;
 
-import jakarta.persistence.*;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.io.Serializable;
-import java.util.Date;
+import jakarta.persistence.*;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
 
 @Table(name = "users")
 @Entity
-public class User implements Serializable {
+public class User implements Serializable, UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -17,8 +22,8 @@ public class User implements Serializable {
     private String name;
     @Column(name = "surname")
     private String surname;
-    @Column(name = "mail")
-    private String mail;
+    @Column(name = "email", unique = true)
+    private String email;
     @Column(name = "password")
     @JsonIgnore
     private String password;
@@ -31,9 +36,9 @@ public class User implements Serializable {
     private String sex;
     @Column(name = "username")
     private String username;
-    @Column(name = "dateoffbrtih")
+    @Column(name = "dateofbirth")
     private Date dateOfBirth;
-    @Column(name = "disabilty")
+    @Column(name = "disability")
     private String disability;
 
     @Column(name = "location")
@@ -51,10 +56,10 @@ public class User implements Serializable {
     public User() {
     }
 
-    public User(String name, String surname, String mail, String password, Boolean premium, Boolean admin, String sex, String username, Date dateOfBirth, String disability) {
+    public User(String name, String surname, String email, String password, Boolean premium, Boolean admin, String sex, String username, Date dateOfBirth, String disability) {
         this.name = name;
         this.surname = surname;
-        this.mail = mail;
+        this.email = email;
         this.password = password;
         this.premium = premium;
         this.admin = admin;
@@ -67,10 +72,44 @@ public class User implements Serializable {
         this.interests = "";
     }
 
-    public static User createDefaultUser(String name, String surname, String mail, String username, String password, String sex, Date dateOfBirth, String disability) {
-        return new User(name, surname, mail, password, false, false, sex, username, dateOfBirth, disability);
+    public static User createDefaultUser(String name, String surname, String email, String username, String password, String sex, Date dateOfBirth, String disability) {
+        return new User(name, surname, email, password, false, false, sex, username, dateOfBirth, disability);
     }
 
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority(admin ? "ROLE_ADMIN" : "ROLE_USER"));
+    }
+
+    @Override
+    public String getPassword() {
+        return password;
+    }
+
+    @Override
+    public String getUsername() {
+        return username;
+    }
+    
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
 
     public Integer getId() {
         return id;
@@ -96,16 +135,12 @@ public class User implements Serializable {
         this.surname = surname;
     }
 
-    public String getMail() {
-        return mail;
+    public String getEmail() {
+        return email;
     }
 
-    public void setMail(String mail) {
-        this.mail = mail;
-    }
-
-    public String getPassword() {
-        return password;
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public void setPassword(String password) {
@@ -135,8 +170,8 @@ public class User implements Serializable {
     public void setSex(String sex) {
         this.sex = sex;
     }
-
-    public String getUsername() {
+    
+    public String getDisplayName() {
         return username;
     }
 
@@ -199,7 +234,7 @@ public class User implements Serializable {
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", surname='" + surname + '\'' +
-                ", mail='" + mail + '\'' +
+                ", email='" + email + '\'' +
                 ", password='" + password + '\'' +
                 ", premium=" + premium +
                 ", admin=" + admin +

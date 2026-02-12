@@ -7,7 +7,7 @@ import java.util.Date;
 public class UserRequest implements Serializable {
     private String name;
     private String surname;
-    private String mail;
+    private String email;
     private String username;
     private String password;
     private String sex;
@@ -17,10 +17,10 @@ public class UserRequest implements Serializable {
     public UserRequest() {
     }
 
-    public UserRequest(String name, String surname, String mail, String username, String password, String sex, Date dateOfBirth, String disabilities) {
+    public UserRequest(String name, String surname, String email, String username, String password, String sex, Date dateOfBirth, String disabilities) {
         this.name = name;
         this.surname = surname;
-        this.mail = mail;
+        this.email = email;
         this.username = username;
         this.password = password;
         this.sex = sex;
@@ -45,12 +45,12 @@ public class UserRequest implements Serializable {
         this.surname = surname;
     }
 
-    public String getMail() {
-        return mail;
+    public String getEmail() {
+        return email;
     }
 
-    public void setMail(String mail) {
-        this.mail = mail;
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public String getUsername() {
@@ -98,7 +98,7 @@ public class UserRequest implements Serializable {
         return "UserRequest{" +
                 "name='" + name + '\'' +
                 ", surname='" + surname + '\'' +
-                ", mail='" + mail + '\'' +
+                ", email='" + email + '\'' +
                 ", username='" + username + '\'' +
                 ", password='" + password + '\'' +
                 ", sex='" + sex + '\'' +

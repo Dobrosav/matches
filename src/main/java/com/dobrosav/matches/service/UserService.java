@@ -1,43 +1,34 @@
 package com.dobrosav.matches.service;
 
-import com.dobrosav.matches.api.model.request.LoginRequest;
-import com.dobrosav.matches.db.entities.User;
-import com.dobrosav.matches.db.repos.UserRepo;
-import com.dobrosav.matches.api.model.response.LoginWrapper;
-import com.dobrosav.matches.api.model.response.SuccessResult;
-import com.dobrosav.matches.api.model.request.UserRequest;
-import com.dobrosav.matches.exception.ErrorType;
-import com.dobrosav.matches.exception.ServiceException;
-import org.joda.time.DateTime;
-import org.joda.time.Years;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
-
-import com.dobrosav.matches.api.model.response.MatchResponse;
 import com.dobrosav.matches.api.model.request.UserPreferencesRequest;
+import com.dobrosav.matches.api.model.response.MatchResponse;
 import com.dobrosav.matches.api.model.response.UserImageResponse;
 import com.dobrosav.matches.api.model.response.UserResponse;
 import com.dobrosav.matches.db.entities.*;
 import com.dobrosav.matches.db.repos.*;
+import com.dobrosav.matches.exception.ErrorType;
+import com.dobrosav.matches.exception.ServiceException;
 import com.dobrosav.matches.mapper.UserMapper;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.Calendar;
+import org.joda.time.DateTime;
+import org.joda.time.Years;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -63,28 +54,9 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    @CachePut(value = "users", key = "#request.mail")
-    public UserResponse createDefaultUser(UserRequest request) throws Exception {
-        if (userRepo.findByUsername(request.getSurname()).isEmpty() && userRepo.findByMail(request.getMail())==null) {
-            User user = User.createDefaultUser(request.getName(), request.getSurname(), request.getMail(), request.getUsername(), passwordEncoder.encode(request.getPassword()), request.getSex(), request.getDateOfBirth(), request.getDisabilities());
-            
-            UserPreferences preferences = new UserPreferences(user);
-            user.setPreferences(preferences);
-
-            userRepo.save(user);
-            return userMapper.toDto(user);
-
-        } else {
-            throw new ServiceException(ErrorType.USER_ALREADY_EXISTS, HttpStatus.CONFLICT);
-        }
-    }
-
     public User findByMail(String mail) {
-        User user = userRepo.findByMail(mail);
-        if (user == null) {
-            throw new ServiceException(ErrorType.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-        }
-        return user;
+        return userRepo.findByEmail(mail)
+                .orElseThrow(() -> new ServiceException(ErrorType.USER_NOT_FOUND, HttpStatus.NOT_FOUND));
     }
 
     @Cacheable(value = "users", key = "#mail")
@@ -96,20 +68,6 @@ public class UserService {
     public void deleteUser(String mail) {
         User deletedUser = findByMail(mail);
         userRepo.delete(deletedUser);
-    }
-
-    public LoginWrapper login(LoginRequest request) {
-        LoginWrapper loginWrapper = new LoginWrapper();
-        User user = userRepo.findByMail(request.getMail());
-        SuccessResult successResult = new SuccessResult();
-        if (user != null && passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            successResult.setResult(true);
-            loginWrapper.setUser(userMapper.toDto(user));
-        } else {
-            successResult.setResult(false);
-        }
-        loginWrapper.setResult(successResult);
-        return loginWrapper;
     }
 
     public List<UserResponse> findByAge(Integer begin, Integer end) throws Exception {
@@ -178,7 +136,7 @@ public class UserService {
 
     public void setProfileImage(String mail, Integer imageId) {
         User user = findByMail(mail);
-        
+
         // Ensure the image exists and belongs to the user
         UserImage newProfileImage = userImageRepo.findByIdAndUser(imageId, user)
                 .orElseThrow(() -> new ServiceException(ErrorType.IMAGE_NOT_FOUND, HttpStatus.NOT_FOUND));
@@ -277,16 +235,16 @@ public class UserService {
     @Transactional(readOnly = true)
     public List<UserResponse> getFeed(String mail) {
         User currentUser = findByMail(mail);
-        
+
         List<Integer> excludedUserIds = new ArrayList<>();
         excludedUserIds.add(currentUser.getId()); // Exclude self
 
         // Exclude liked users
         userLikeRepo.findByLiker(currentUser).forEach(like -> excludedUserIds.add(like.getLiked().getId()));
-        
+
         // Exclude disliked users
         userDislikeRepo.findByDisliker(currentUser).forEach(dislike -> excludedUserIds.add(dislike.getDisliked().getId()));
-        
+
         // Exclude matched users
         userMatchRepo.findAllMatchesForUser(currentUser).forEach(match -> {
             excludedUserIds.add(match.getUser1().getId());
@@ -294,7 +252,7 @@ public class UserService {
         });
 
         List<User> feedUsers = userRepo.findByIdNotIn(excludedUserIds);
-        
+
         return feedUsers.stream().map(userMapper::toDto).collect(Collectors.toList());
     }
 

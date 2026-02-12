@@ -7,7 +7,7 @@ public class UserResponse implements Serializable {
     private Integer id;
     private String name;
     private String surname;
-    private String mail;
+    private String email;
     private Boolean premium;
     private Boolean admin;
     private String sex;
@@ -21,11 +21,11 @@ public class UserResponse implements Serializable {
     public UserResponse() {
     }
 
-    public UserResponse(Integer id, String name, String surname, String mail, Boolean premium, Boolean admin, String sex, String username, Date dateOfBirth, String disability, String location, String bio, String interests) {
+    public UserResponse(Integer id, String name, String surname, String email, Boolean premium, Boolean admin, String sex, String username, Date dateOfBirth, String disability, String location, String bio, String interests) {
         this.id = id;
         this.name = name;
         this.surname = surname;
-        this.mail = mail;
+        this.email = email;
         this.premium = premium;
         this.admin = admin;
         this.sex = sex;
@@ -61,12 +61,12 @@ public class UserResponse implements Serializable {
         this.surname = surname;
     }
 
-    public String getMail() {
-        return mail;
+    public String getEmail() {
+        return email;
     }
 
-    public void setMail(String mail) {
-        this.mail = mail;
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public Boolean getPremium() {
