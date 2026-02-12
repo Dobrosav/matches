@@ -4,10 +4,12 @@ import com.dobrosav.matches.api.model.request.UserRequest;
 import com.dobrosav.matches.api.model.response.MatchResponse;
 import com.dobrosav.matches.api.model.response.UserImageResponse;
 import com.dobrosav.matches.api.model.response.UserResponse;
+import com.dobrosav.matches.api.model.request.UserPreferencesRequest;
 import com.dobrosav.matches.db.entities.User;
 import com.dobrosav.matches.db.repos.*;
 import com.dobrosav.matches.exception.ServiceException;
 import com.dobrosav.matches.security.AuthenticationService;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -273,5 +275,102 @@ public class UserServiceTest {
         User extraUser = userRepo.findByEmail("extra@example.com").get();
 
         assertThrows(ServiceException.class, () -> userService.likeUser(normalUser.getEmail(), extraUser.getId()));
+    }
+
+    @Test
+    void testUploadInvalidImage() throws Exception {
+        UserRequest userRequest = new UserRequest("Invalid", "Image", "invalid@example.com", "invalidimg", "p", "M", new Date(), "");
+        authenticationService.register(userRequest);
+
+        MockMultipartFile file = new MockMultipartFile("file", "test.txt", "text/plain", "not an image".getBytes());
+        assertThrows(ServiceException.class, () -> userService.uploadImage("invalid@example.com", file));
+    }
+
+
+    @Test
+    void testGetUserImagesEmpty() throws Exception {
+        UserRequest userRequest = new UserRequest("No", "Images", "noimages@example.com", "noimages", "p", "F", new Date(), "");
+        authenticationService.register(userRequest);
+
+        List<UserImageResponse> images = userService.getUserImages("noimages@example.com");
+        assertTrue(images.isEmpty());
+    }
+
+    @Test
+    void testDeleteImage() throws Exception {
+        UserRequest userRequest = new UserRequest("Delete", "Image", "deleteimg@example.com", "deleteimg", "p", "M", new Date(), "");
+        authenticationService.register(userRequest);
+
+        MockMultipartFile file1 = new MockMultipartFile("file1", "first.jpg", "image/jpeg", "content1".getBytes());
+        MockMultipartFile file2 = new MockMultipartFile("file2", "second.jpg", "image/jpeg", "content2".getBytes());
+        UserImageResponse img1 = userService.uploadImage("deleteimg@example.com", file1);
+        userService.uploadImage("deleteimg@example.com", file2);
+
+        assertEquals(2, userService.getUserImages("deleteimg@example.com").size());
+
+        userService.deleteImage("deleteimg@example.com", img1.getId());
+
+        assertEquals(1, userService.getUserImages("deleteimg@example.com").size());
+        // Verify that the second image is now the profile image
+        UserImageResponse remainingImage = userService.getUserImages("deleteimg@example.com").get(0);
+        assertTrue(remainingImage.getProfileImage());
+    }
+
+    @Test
+    void testUpdatePreferences() throws Exception {
+        UserRequest userRequest = new UserRequest("Prefs", "User", "prefs@example.com", "prefsuser", "p", "F", new Date(), "");
+        authenticationService.register(userRequest);
+        User user = userRepo.findByEmail("prefs@example.com").get();
+
+        UserPreferencesRequest prefsRequest = new UserPreferencesRequest();
+        prefsRequest.setTargetGender("Female");
+        prefsRequest.setMinAge(25);
+        prefsRequest.setMaxAge(35);
+
+        userService.updatePreferences("prefs@example.com", prefsRequest);
+
+        User updatedUser = userRepo.findByEmail("prefs@example.com").get();
+        assertEquals("Female", updatedUser.getPreferences().getTargetGender());
+        assertEquals(25, updatedUser.getPreferences().getMinAge());
+        assertEquals(35, updatedUser.getPreferences().getMaxAge());
+    }
+
+
+    @Test
+    void testLikeUserSelf() {
+        UserRequest userRequest = new UserRequest("Self", "Liker", "selflike@example.com", "selflike", "p", "M", new Date(), "");
+        authenticationService.register(userRequest);
+        User user = userRepo.findByEmail("selflike@example.com").get();
+
+        assertThrows(ServiceException.class, () -> userService.likeUser("selflike@example.com", user.getId()));
+    }
+
+    @Test
+    void testLikeUserAlreadyLiked() {
+        UserRequest user1Request = new UserRequest("User1", "Like", "user1like@example.com", "user1like", "p", "M", new Date(), "");
+        UserRequest user2Request = new UserRequest("User2", "Like", "user2like@example.com", "user2like", "p", "F", new Date(), "");
+        authenticationService.register(user1Request);
+        authenticationService.register(user2Request);
+        User user2 = userRepo.findByEmail("user2like@example.com").get();
+
+        userService.likeUser("user1like@example.com", user2.getId()); // First like
+        assertThrows(ServiceException.class, () -> userService.likeUser("user1like@example.com", user2.getId())); // Second like
+    }
+
+    @Test
+    void testDeleteNonProfileImage() throws Exception {
+        UserRequest userRequest = new UserRequest("Non", "Profile", "nonprofile@example.com", "nonprofile", "p", "F", new Date(), "");
+        authenticationService.register(userRequest);
+
+        MockMultipartFile file1 = new MockMultipartFile("file1", "first.jpg", "image/jpeg", "content1".getBytes());
+        MockMultipartFile file2 = new MockMultipartFile("file2", "second.jpg", "image/jpeg", "content2".getBytes());
+        UserImageResponse img1 = userService.uploadImage("nonprofile@example.com", file1);
+        UserImageResponse img2 = userService.uploadImage("nonprofile@example.com", file2);
+
+        userService.deleteImage("nonprofile@example.com", img2.getId()); // Delete non-profile image
+
+        List<UserImageResponse> images = userService.getUserImages("nonprofile@example.com");
+        assertEquals(1, images.size());
+        assertTrue(images.get(0).getProfileImage()); // First image should still be profile
     }
 }

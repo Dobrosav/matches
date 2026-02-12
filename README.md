@@ -128,4 +128,3 @@ To run tests:
 ```bash
 mvn test
 ```
-*Note: Docker must be running on your machine for tests to execute.*
