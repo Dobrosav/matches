@@ -11,6 +11,8 @@ import com.dobrosav.matches.db.repos.RefreshTokenRepository;
 import com.dobrosav.matches.exception.ErrorType;
 import com.dobrosav.matches.exception.ServiceException;
 import com.dobrosav.matches.mapper.UserMapper;
+import com.dobrosav.matches.db.specifications.UserSpecification;
+import org.springframework.data.jpa.domain.Specification;
 import org.joda.time.DateTime;
 import org.joda.time.Years;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -294,7 +296,7 @@ public class UserService {
 
     @Cacheable(value = "filtered-feed", key = "#mail + '-' + #gender + '-' + #minAge + '-' + #maxAge")
     @Transactional(readOnly = true)
-    public List<UserResponse> getFilteredFeed(String mail, String gender, int minAge, int maxAge) {
+    public List<UserResponse> getFilteredFeed(String mail, String gender, Integer minAge, Integer maxAge) {
         User currentUser = findByMail(mail);
 
         List<Integer> excludedUserIds = new ArrayList<>();
@@ -307,14 +309,10 @@ public class UserService {
             excludedUserIds.add(match.getUser2().getId());
         });
 
-        Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.YEAR, -minAge);
-        Date endDate = calendar.getTime();
-        calendar.add(Calendar.YEAR, -(maxAge - minAge));
-        Date startDate = calendar.getTime();
+        Specification<User> spec = UserSpecification.filter(excludedUserIds, gender, minAge, maxAge);
 
         Pageable pageable = PageRequest.of(0, 25);
-        Page<User> feedUsers = userRepo.findFilteredFeed(excludedUserIds, gender, startDate, endDate, pageable);
+        Page<User> feedUsers = userRepo.findAll(spec, pageable);
 
         return feedUsers.stream().map(userMapper::toDto).collect(Collectors.toList());
     }

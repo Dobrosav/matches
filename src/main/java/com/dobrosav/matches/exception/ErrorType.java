@@ -18,7 +18,8 @@ public enum ErrorType {
     CANNOT_LIKE_SELF("114", "User cannot like themselves"),
     DAILY_LIKE_LIMIT_REACHED("115", "Daily like limit reached for non-premium users"),
     PREMIUM_FEATURE_ONLY("116", "This feature is available for premium users only"),
-    INVALID_TOKEN("117", "Invalid token");
+    INVALID_TOKEN("117", "Invalid token"),
+    INVALID_CREDENTIALS("118", "Invalid username or password");
 
     private final String code;
     private final String message;

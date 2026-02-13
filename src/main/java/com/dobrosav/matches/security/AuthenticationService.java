@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -50,23 +51,27 @@ public class AuthenticationService {
                 request.getDisabilities()
         );
         userRepository.save(user);
-        var jwtToken = jwtService.generateToken(user);
-        var refreshToken = jwtService.generateRefreshToken(user);
+        var jwtToken = jwtService.generateToken(user.getEmail());
+        var refreshToken = jwtService.generateRefreshToken(user.getEmail());
         saveUserRefreshToken(user, refreshToken);
         return new AuthenticationResponse(jwtToken, refreshToken);
     }
 
     public AuthenticationResponse authenticate(LoginRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getUsername(),
-                        request.getPassword()
-                )
-        );
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getUsername(),
+                            request.getPassword()
+                    )
+            );
+        } catch (AuthenticationException e) {
+            throw new ServiceException(ErrorType.INVALID_CREDENTIALS, HttpStatus.UNAUTHORIZED);
+        }
         var user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new ServiceException(ErrorType.USER_NOT_FOUND, HttpStatus.NOT_FOUND));
-        var jwtToken = jwtService.generateToken(user);
-        var refreshToken = jwtService.generateRefreshToken(user);
+        var jwtToken = jwtService.generateToken(user.getEmail());
+        var refreshToken = jwtService.generateRefreshToken(user.getEmail());
         saveUserRefreshToken(user, refreshToken);
         return new AuthenticationResponse(jwtToken, refreshToken);
     }
@@ -91,9 +96,9 @@ public class AuthenticationService {
         if (userEmail != null) {
             var user = this.userRepository.findByEmail(userEmail)
                     .orElseThrow(() -> new ServiceException(ErrorType.USER_NOT_FOUND, HttpStatus.NOT_FOUND));
-            if (jwtService.isTokenValid(refreshToken, user)) {
-                var accessToken = jwtService.generateToken(user);
-                var newRefreshToken = jwtService.generateRefreshToken(user);
+            if (jwtService.isTokenValid(refreshToken, user.getEmail())) {
+                var accessToken = jwtService.generateToken(user.getEmail());
+                var newRefreshToken = jwtService.generateRefreshToken(user.getEmail());
                 saveUserRefreshToken(user, newRefreshToken);
                 return new AuthenticationResponse(accessToken, newRefreshToken);
             }

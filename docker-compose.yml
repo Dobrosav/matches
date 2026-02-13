@@ -1,5 +1,5 @@
 services:
-  app:
+  backend:
     build:
       context: .
       dockerfile: Dockerfile
@@ -58,6 +58,17 @@ services:
       timeout: 3s
       retries: 15
       start_period: 5s
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - springboot-mysql-network
 volumes:
   mysql-data:
   cache:
