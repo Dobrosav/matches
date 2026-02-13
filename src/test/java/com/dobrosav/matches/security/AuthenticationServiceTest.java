@@ -50,8 +50,8 @@ class AuthenticationServiceTest {
         savedUser.setEmail("test@example.com");
 
         when(userRepo.save(any(User.class))).thenReturn(savedUser);
-        when(jwtService.generateToken(any(User.class))).thenReturn("test-token");
-        when(jwtService.generateRefreshToken(any(User.class))).thenReturn("test-refresh-token");
+        when(jwtService.generateToken(any(String.class))).thenReturn("test-token");
+        when(jwtService.generateRefreshToken(any(String.class))).thenReturn("test-refresh-token");
 
         AuthenticationResponse response = authenticationService.register(request);
 
@@ -69,8 +69,8 @@ class AuthenticationServiceTest {
         user.setEmail("test@example.com");
 
         when(userRepo.findByUsername("test@example.com")).thenReturn(Optional.of(user));
-        when(jwtService.generateToken(user)).thenReturn("test-token");
-        when(jwtService.generateRefreshToken(any(User.class))).thenReturn("test-refresh-token");
+        when(jwtService.generateToken(user.getEmail())).thenReturn("test-token");
+        when(jwtService.generateRefreshToken(any(String.class))).thenReturn("test-refresh-token");
 
 
         AuthenticationResponse response = authenticationService.authenticate(request);
@@ -89,9 +89,9 @@ class AuthenticationServiceTest {
         when(httpServletRequest.getHeader("Authorization")).thenReturn("Bearer " + refreshToken);
         when(jwtService.extractUsername(refreshToken)).thenReturn(userEmail);
         when(userRepo.findByEmail(userEmail)).thenReturn(Optional.of(user));
-        when(jwtService.isTokenValid(refreshToken, user)).thenReturn(true);
-        when(jwtService.generateToken(user)).thenReturn("new-access-token");
-        when(jwtService.generateRefreshToken(user)).thenReturn("new-refresh-token");
+        when(jwtService.isTokenValid(refreshToken, user.getEmail())).thenReturn(true);
+        when(jwtService.generateToken(user.getEmail())).thenReturn("new-access-token");
+        when(jwtService.generateRefreshToken(user.getEmail())).thenReturn("new-refresh-token");
 
         AuthenticationResponse response = authenticationService.refreshToken(httpServletRequest);
 

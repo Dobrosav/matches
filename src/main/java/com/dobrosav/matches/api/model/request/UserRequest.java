@@ -1,17 +1,38 @@
 package com.dobrosav.matches.api.model.request;
 
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
 import java.io.Serializable;
 import java.util.Date;
 
 public class UserRequest implements Serializable {
+    @NotBlank(message = "Name is required")
     private String name;
+    
+    @NotBlank(message = "Surname is required")
     private String surname;
+    
+    @NotBlank(message = "Email is required")
+    @Email(message = "Email should be valid")
     private String email;
+    
+    @NotBlank(message = "Username is required")
     private String username;
+    
+    @NotBlank(message = "Password is required")
+    @Size(min = 6, message = "Password must be at least 6 characters long")
     private String password;
+    
+    @NotBlank(message = "Sex is required")
     private String sex;
+    
+    @NotNull(message = "Date of birth is required")
     private Date dateOfBirth;
+    
     private String disabilities;
 
     public UserRequest() {

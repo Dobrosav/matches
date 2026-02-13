@@ -29,6 +29,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/api/v1")
 public class UserController {
@@ -47,7 +49,7 @@ public class UserController {
     }
     
     @PostMapping("/auth/register")
-    public ResponseEntity<AuthenticationResponse> register(@RequestBody UserRequest request) {
+    public ResponseEntity<AuthenticationResponse> register(@Valid @RequestBody UserRequest request) {
         return ResponseEntity.ok(authenticationService.register(request));
     }
 
@@ -149,9 +151,9 @@ public class UserController {
     @GetMapping("/users/{email}/filtered-feed")
     public ResponseEntity<List<UserResponse>> getFilteredFeed(
             @PathVariable("email") String email,
-            @RequestParam("gender") String gender,
-            @RequestParam("minAge") int minAge,
-            @RequestParam("maxAge") int maxAge
+            @RequestParam(name = "gender", required = false) String gender,
+            @RequestParam(name = "minAge", required = false) Integer minAge,
+            @RequestParam(name = "maxAge", required = false) Integer maxAge
     ) {
         List<UserResponse> users = userService.getFilteredFeed(email, gender, minAge, maxAge);
         return new ResponseEntity<>(users, HttpStatus.OK);

@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class JwtServiceTest {
 
     private JwtService jwtService;
-    private UserDetails userDetails;
+    private String email;
 
     // 32 bytes encoded in Base64
     private static final String SECRET_KEY = "NDI0MjQyNDI0MjQyNDI0MjQyNDI0MjQyNDI0MjQyNDI="; 
@@ -29,53 +29,53 @@ class JwtServiceTest {
         ReflectionTestUtils.setField(jwtService, "accessTokenExpiration", ACCESS_EXPIRATION);
         ReflectionTestUtils.setField(jwtService, "refreshTokenExpiration", REFRESH_EXPIRATION);
 
-        userDetails = new User("testuser", "password", Collections.emptyList());
+        email = "testuser@example.com";
     }
 
     @Test
     void testGenerateToken() {
-        String token = jwtService.generateToken(userDetails);
+        String token = jwtService.generateToken(email);
         assertNotNull(token);
         assertFalse(token.isEmpty());
     }
 
     @Test
     void testExtractUsername() {
-        String token = jwtService.generateToken(userDetails);
+        String token = jwtService.generateToken(email);
         String username = jwtService.extractUsername(token);
-        assertEquals("testuser", username);
+        assertEquals(email, username);
     }
 
     @Test
     void testIsTokenValid() {
-        String token = jwtService.generateToken(userDetails);
-        assertTrue(jwtService.isTokenValid(token, userDetails));
+        String token = jwtService.generateToken(email);
+        assertTrue(jwtService.isTokenValid(token, email));
     }
 
     @Test
     void testIsTokenValid_InvalidUser() {
-        String token = jwtService.generateToken(userDetails);
-        UserDetails otherUser = new User("otheruser", "password", Collections.emptyList());
-        assertFalse(jwtService.isTokenValid(token, otherUser));
+        String token = jwtService.generateToken(email);
+        String otherEmail = "otheruser@example.com";
+        assertFalse(jwtService.isTokenValid(token, otherEmail));
     }
 
     @Test
     void testGenerateTokenWithExtraClaims() {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", "admin");
-        String token = jwtService.generateToken(claims, userDetails);
+        String token = jwtService.generateToken(claims, email);
         
         // We can't easily extract arbitrary claims with the current public API of JwtService 
         // without adding a specific extraction method or making extractClaim public (which it is).
         // Let's verify username still works.
-        assertEquals("testuser", jwtService.extractUsername(token));
+        assertEquals(email, jwtService.extractUsername(token));
     }
     
     @Test
     void testGenerateRefreshToken() {
-        String token = jwtService.generateRefreshToken(userDetails);
+        String token = jwtService.generateRefreshToken(email);
         assertNotNull(token);
-        assertTrue(jwtService.isTokenValid(token, userDetails));
+        assertTrue(jwtService.isTokenValid(token, email));
     }
 
     @Test
@@ -83,7 +83,7 @@ class JwtServiceTest {
         // Set very short expiration
         ReflectionTestUtils.setField(jwtService, "accessTokenExpiration", 1L); 
         
-        String token = jwtService.generateToken(userDetails);
+        String token = jwtService.generateToken(email);
         
         // Wait for expiration
         Thread.sleep(10); 
@@ -100,6 +100,6 @@ class JwtServiceTest {
         */
         // The service doesn't catch the exception, so we expect the exception.
         
-        assertThrows(io.jsonwebtoken.ExpiredJwtException.class, () -> jwtService.isTokenValid(token, userDetails));
+        assertThrows(io.jsonwebtoken.ExpiredJwtException.class, () -> jwtService.isTokenValid(token, email));
     }
 }

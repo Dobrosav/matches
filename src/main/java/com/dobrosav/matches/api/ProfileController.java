@@ -8,6 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/api/v1/profile")
 public class ProfileController {
@@ -25,7 +27,7 @@ public class ProfileController {
     }
 
     @PutMapping("/me")
-    public ResponseEntity<UserResponse> updateMyProfile(@AuthenticationPrincipal User currentUser, @RequestBody ProfileUpdateRequest request) {
+    public ResponseEntity<UserResponse> updateMyProfile(@AuthenticationPrincipal User currentUser, @Valid @RequestBody ProfileUpdateRequest request) {
         User updatedUser = userService.updateUserProfile(currentUser.getId(), request);
         return ResponseEntity.ok(new UserResponse(updatedUser));
     }

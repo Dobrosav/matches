@@ -9,6 +9,7 @@ import com.dobrosav.matches.db.entities.*;
 import com.dobrosav.matches.db.repos.*;
 import com.dobrosav.matches.exception.ServiceException;
 import com.dobrosav.matches.mapper.UserMapper;
+import org.springframework.data.jpa.domain.Specification;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -317,7 +318,8 @@ class UserServiceUnitTest {
         
         when(userRepo.findByEmail("test@test.com")).thenReturn(Optional.of(user));
         Page<User> page = new PageImpl<>(Collections.emptyList());
-        when(userRepo.findFilteredFeed(anyList(), anyString(), any(), any(), any(Pageable.class))).thenReturn(page);
+        
+        when(userRepo.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
 
         List<UserResponse> feed = userService.getFilteredFeed("test@test.com", "F", 20, 30);
         assertNotNull(feed);
