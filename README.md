@@ -23,7 +23,7 @@ A Spring Boot application for a matching/dating service platform.
 *   **Caching**: Redis integration for caching user data to improve performance.
 *   **API Documentation**: Integrated Swagger UI for easy API exploration and testing.
 
-## Technologies
+## Backend
 
 *   **Java**: 21
 *   **Framework**: Spring Boot 3.3.4, Spring Security, Spring WebSockets
@@ -31,6 +31,13 @@ A Spring Boot application for a matching/dating service platform.
 *   **Cache**: Redis
 *   **Testing**: JUnit 5, Testcontainers
 *   **Build Tool**: Maven
+
+## Frontend
+
+The frontend is a mobile application built with Flutter.
+
+*   **Framework**: Flutter
+*   **Language**: Dart
 
 ## Prerequisites
 
