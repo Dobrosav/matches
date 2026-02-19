@@ -86,7 +86,7 @@ class UserServiceUnitTest {
         User user = new User();
         user.setEmail("test@test.com");
         when(userRepo.findByEmail("test@test.com")).thenReturn(Optional.of(user));
-        when(userMapper.toDto(user)).thenReturn(new UserResponse(1, "Name", "Surname", "test@test.com", false, false, "M", "username", new Date(), "none", "loc", "bio", "interests"));
+        when(userMapper.toDto(user)).thenReturn(new UserResponse(1, "Name", "Surname", "test@test.com", false, false, Sex.MALE, "username", new Date(), "none", "loc", "bio", "interests"));
 
         UserResponse result = userService.getUserByMail("test@test.com");
         assertNotNull(result);
@@ -268,7 +268,7 @@ class UserServiceUnitTest {
         User user = new User();
         user.setEmail("test@test.com");
         when(userRepo.findByEmail("test@test.com")).thenReturn(Optional.of(user));
-        when(userMapper.toDto(user)).thenReturn(new UserResponse(1, "Name", "Surname", "test@test.com", false, false, "M", "username", new Date(), "none", "loc", "bio", "interests"));
+        when(userMapper.toDto(user)).thenReturn(new UserResponse(1, "Name", "Surname", "test@test.com", false, false, Sex.MALE, "username", new Date(), "none", "loc", "bio", "interests"));
 
         UserPreferencesRequest req = new UserPreferencesRequest();
         req.setTargetGender("F");
@@ -321,7 +321,7 @@ class UserServiceUnitTest {
         
         when(userRepo.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
 
-        List<UserResponse> feed = userService.getFilteredFeed("test@test.com", "F", 20, 30);
+        List<UserResponse> feed = userService.getFilteredFeed("test@test.com", "F", 20, 30, null);
         assertNotNull(feed);
     }
 

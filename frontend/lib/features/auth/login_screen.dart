@@ -13,7 +13,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _authService = AuthService();
   bool _isLoading = false;
@@ -28,7 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       try {
         await _authService.login(
-          _usernameController.text,
+          _emailController.text,
           _passwordController.text,
         );
 
@@ -59,7 +59,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    _usernameController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -99,11 +99,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 48),
                   CustomTextField(
-                    controller: _usernameController,
-                    label: 'Username',
+                    controller: _emailController,
+                    label: 'Email',
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter your username';
+                        return 'Please enter your email';
                       }
                       return null;
                     },

@@ -3,7 +3,6 @@ package com.dobrosav.matches.security;
 import static org.springframework.security.config.Customizer.withDefaults;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -23,11 +22,9 @@ import java.util.Arrays;
 public class SecurityConfiguration {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
-    private final AuthenticationProvider authenticationProvider;
 
-    public SecurityConfiguration(JwtAuthenticationFilter jwtAuthFilter, AuthenticationProvider authenticationProvider) {
+    public SecurityConfiguration(JwtAuthenticationFilter jwtAuthFilter) {
         this.jwtAuthFilter = jwtAuthFilter;
-        this.authenticationProvider = authenticationProvider;
     }
 
     @Bean
@@ -37,10 +34,12 @@ public class SecurityConfiguration {
                 .cors(withDefaults())
                 .authorizeHttpRequests(req ->
                         req.requestMatchers(
-                                        "/api/v1/auth/**",
-                                        "/v3/api-docs/**",
-                                        "/swagger-ui/**",
-                                        "/swagger-ui.html",
+                                         "/api/v1/auth/**",
+                                         "/api/v1/users/**",
+                                         "/api/v1/reactions/**",
+                                         "/v3/api-docs/**",
+                                         "/swagger-ui/**",
+                                         "/swagger-ui.html",
                                         "/swagger-resources/**",
                                         "/webjars/**"
                                 )
@@ -49,7 +48,6 @@ public class SecurityConfiguration {
                                 .authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

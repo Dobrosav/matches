@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import '../../data/cities_data.dart';
 
 class FilterDialog extends StatefulWidget {
   final String? initialGender;
   final int? initialMinAge;
   final int? initialMaxAge;
+  final String? initialLocation;
 
   const FilterDialog({
     super.key,
     this.initialGender,
     this.initialMinAge,
     this.initialMaxAge,
+    this.initialLocation,
   });
 
   @override
@@ -19,6 +22,7 @@ class FilterDialog extends StatefulWidget {
 class _FilterDialogState extends State<FilterDialog> {
   late String _selectedGender;
   late RangeValues _ageRange;
+  late String _selectedLocation;
 
   @override
   void initState() {
@@ -28,10 +32,13 @@ class _FilterDialogState extends State<FilterDialog> {
       (widget.initialMinAge ?? 18).toDouble(),
       (widget.initialMaxAge ?? 99).toDouble(),
     );
+    _selectedLocation = widget.initialLocation ?? 'Any';
   }
 
   @override
   Widget build(BuildContext context) {
+    final List<String> cities = citiesByCountry['Serbia']!;
+
     return AlertDialog(
       title: const Text('Filter Matches'),
       content: SingleChildScrollView(
@@ -48,7 +55,7 @@ class _FilterDialogState extends State<FilterDialog> {
                   _selectedGender = newValue!;
                 });
               },
-              items: <String>['Any', 'Male', 'Female', 'Other']
+              items: <String>['Any', 'Male', 'Female', 'Others']
                   .map<DropdownMenuItem<String>>((String value) {
                     return DropdownMenuItem<String>(
                       value: value,
@@ -80,6 +87,25 @@ class _FilterDialogState extends State<FilterDialog> {
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
+            const SizedBox(height: 16),
+            const Text('Location'),
+            DropdownButton<String>(
+              value: _selectedLocation,
+              isExpanded: true,
+              onChanged: (String? newValue) {
+                setState(() {
+                  _selectedLocation = newValue!;
+                });
+              },
+              items: <String>['Any', ...cities].map<DropdownMenuItem<String>>((
+                String value,
+              ) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+            ),
           ],
         ),
       ),
@@ -97,6 +123,7 @@ class _FilterDialogState extends State<FilterDialog> {
               'gender': _selectedGender,
               'minAge': _ageRange.start.round(),
               'maxAge': _ageRange.end.round(),
+              'location': _selectedLocation,
             });
           },
         ),

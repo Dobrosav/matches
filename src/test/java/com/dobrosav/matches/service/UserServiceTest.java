@@ -5,6 +5,7 @@ import com.dobrosav.matches.api.model.response.MatchResponse;
 import com.dobrosav.matches.api.model.response.UserImageResponse;
 import com.dobrosav.matches.api.model.response.UserResponse;
 import com.dobrosav.matches.api.model.request.UserPreferencesRequest;
+import com.dobrosav.matches.db.entities.Sex;
 import com.dobrosav.matches.db.entities.User;
 import com.dobrosav.matches.db.repos.*;
 import com.dobrosav.matches.exception.ServiceException;
@@ -114,7 +115,7 @@ public class UserServiceTest {
         userRequest.setEmail("test@example.com");
         userRequest.setUsername("testuser");
         userRequest.setPassword("password");
-        userRequest.setSex("M");
+        userRequest.setSex(Sex.MALE);
         userRequest.setDateOfBirth(new Date());
 
         authenticationService.register(userRequest);
@@ -138,7 +139,7 @@ public class UserServiceTest {
         userRequest.setEmail("test@example.com");
         userRequest.setUsername("testuser");
         userRequest.setPassword("password");
-        userRequest.setSex("M");
+        userRequest.setSex(Sex.MALE);
         userRequest.setDateOfBirth(new Date());
 
         authenticationService.register(userRequest);
@@ -159,7 +160,7 @@ public class UserServiceTest {
         user1Request.setEmail("user1@example.com");
         user1Request.setUsername("user1");
         user1Request.setPassword("password");
-        user1Request.setSex("M");
+        user1Request.setSex(Sex.MALE);
         user1Request.setDateOfBirth(new Date());
 
         UserRequest user2Request = new UserRequest();
@@ -168,7 +169,7 @@ public class UserServiceTest {
         user2Request.setEmail("user2@example.com");
         user2Request.setUsername("user2");
         user2Request.setPassword("password");
-        user2Request.setSex("F");
+        user2Request.setSex(Sex.FEMALE);
         user2Request.setDateOfBirth(new Date());
 
         authenticationService.register(user1Request);
@@ -202,7 +203,7 @@ public class UserServiceTest {
         userRequest.setEmail("hash@example.com");
         userRequest.setUsername("hashtest");
         userRequest.setPassword("plainpassword");
-        userRequest.setSex("M");
+        userRequest.setSex(Sex.MALE);
         userRequest.setDateOfBirth(new Date());
 
         authenticationService.register(userRequest);
@@ -214,10 +215,10 @@ public class UserServiceTest {
 
     @Test
     void testFeedExclusions() throws Exception {
-        UserRequest mainUserReq = new UserRequest("Main", "User", "main@example.com", "mainuser", "p", "M", new Date(), "");
-        UserRequest likedUserReq = new UserRequest("Liked", "User", "liked@example.com", "likeduser", "p", "F", new Date(), "");
-        UserRequest dislikedUserReq = new UserRequest("Disliked", "User", "disliked@example.com", "dislikeduser", "p", "F", new Date(), "");
-        UserRequest otherUserReq = new UserRequest("Other", "User", "other@example.com", "otheruser", "p", "F", new Date(), "");
+        UserRequest mainUserReq = new UserRequest("Main", "User", "main@example.com", "mainuser", "p", Sex.MALE, new Date(), "");
+        UserRequest likedUserReq = new UserRequest("Liked", "User", "liked@example.com", "likeduser", "p", Sex.FEMALE, new Date(), "");
+        UserRequest dislikedUserReq = new UserRequest("Disliked", "User", "disliked@example.com", "dislikeduser", "p", Sex.FEMALE, new Date(), "");
+        UserRequest otherUserReq = new UserRequest("Other", "User", "other@example.com", "otheruser", "p", Sex.FEMALE, new Date(), "");
 
         authenticationService.register(mainUserReq);
         authenticationService.register(likedUserReq);
@@ -232,7 +233,7 @@ public class UserServiceTest {
         userService.likeUser(mainUser.getEmail(), likedUser.getId());
         userService.dislikeUser(mainUser.getEmail(), dislikedUser.getId());
 
-        List<UserResponse> feed = userService.getFeed(mainUser.getEmail());
+        List<UserResponse> feed = userService.getFilteredFeed(mainUser.getEmail(), null, null, null, null);
 
         assertEquals(1, feed.size());
         assertEquals("other@example.com", feed.get(0).getEmail());
@@ -240,8 +241,8 @@ public class UserServiceTest {
 
     @Test
     void testPremiumFeatures() throws Exception {
-        UserRequest premiumUserReq = new UserRequest("Premium", "User", "premium@example.com", "premuser", "p", "M", new Date(), "");
-        UserRequest normalUserReq = new UserRequest("Normal", "User", "normal@example.com", "normuser", "p", "F", new Date(), "");
+        UserRequest premiumUserReq = new UserRequest("Premium", "User", "premium@example.com", "premuser", "p", Sex.MALE, new Date(), "");
+        UserRequest normalUserReq = new UserRequest("Normal", "User", "normal@example.com", "normuser", "p", Sex.FEMALE, new Date(), "");
 
         authenticationService.register(premiumUserReq);
         authenticationService.register(normalUserReq);
@@ -264,13 +265,13 @@ public class UserServiceTest {
 
         // Test like limit
         for (int i = 0; i < 9; i++) {
-            UserRequest tempUserReq = new UserRequest("Temp" + i, "User", "temp" + i + "@example.com", "temp" + i, "p", "F", new Date(), "");
+            UserRequest tempUserReq = new UserRequest("Temp" + i, "User", "temp" + i + "@example.com", "temp" + i, "p", Sex.FEMALE, new Date(), "");
             authenticationService.register(tempUserReq);
             User tempUser = userRepo.findByEmail("temp" + i + "@example.com").get();
             userService.likeUser(normalUser.getEmail(), tempUser.getId());
         }
 
-        UserRequest extraUserReq = new UserRequest("Extra", "User", "extra@example.com", "extra", "p", "F", new Date(), "");
+        UserRequest extraUserReq = new UserRequest("Extra", "User", "extra@example.com", "extra", "p", Sex.FEMALE, new Date(), "");
         authenticationService.register(extraUserReq);
         User extraUser = userRepo.findByEmail("extra@example.com").get();
 
@@ -279,7 +280,7 @@ public class UserServiceTest {
 
     @Test
     void testUploadInvalidImage() throws Exception {
-        UserRequest userRequest = new UserRequest("Invalid", "Image", "invalid@example.com", "invalidimg", "p", "M", new Date(), "");
+        UserRequest userRequest = new UserRequest("Invalid", "Image", "invalid@example.com", "invalidimg", "p", Sex.MALE, new Date(), "");
         authenticationService.register(userRequest);
 
         MockMultipartFile file = new MockMultipartFile("file", "test.txt", "text/plain", "not an image".getBytes());
@@ -289,7 +290,7 @@ public class UserServiceTest {
 
     @Test
     void testGetUserImagesEmpty() throws Exception {
-        UserRequest userRequest = new UserRequest("No", "Images", "noimages@example.com", "noimages", "p", "F", new Date(), "");
+        UserRequest userRequest = new UserRequest("No", "Images", "noimages@example.com", "noimages", "p", Sex.FEMALE, new Date(), "");
         authenticationService.register(userRequest);
 
         List<UserImageResponse> images = userService.getUserImages("noimages@example.com");
@@ -298,7 +299,7 @@ public class UserServiceTest {
 
     @Test
     void testDeleteImage() throws Exception {
-        UserRequest userRequest = new UserRequest("Delete", "Image", "deleteimg@example.com", "deleteimg", "p", "M", new Date(), "");
+        UserRequest userRequest = new UserRequest("Delete", "Image", "deleteimg@example.com", "deleteimg", "p", Sex.MALE, new Date(), "");
         authenticationService.register(userRequest);
 
         MockMultipartFile file1 = new MockMultipartFile("file1", "first.jpg", "image/jpeg", "content1".getBytes());
@@ -318,7 +319,7 @@ public class UserServiceTest {
 
     @Test
     void testUpdatePreferences() throws Exception {
-        UserRequest userRequest = new UserRequest("Prefs", "User", "prefs@example.com", "prefsuser", "p", "F", new Date(), "");
+        UserRequest userRequest = new UserRequest("Prefs", "User", "prefs@example.com", "prefsuser", "p", Sex.FEMALE, new Date(), "");
         authenticationService.register(userRequest);
         User user = userRepo.findByEmail("prefs@example.com").get();
 
@@ -338,7 +339,7 @@ public class UserServiceTest {
 
     @Test
     void testLikeUserSelf() {
-        UserRequest userRequest = new UserRequest("Self", "Liker", "selflike@example.com", "selflike", "p", "M", new Date(), "");
+        UserRequest userRequest = new UserRequest("Self", "Liker", "selflike@example.com", "selflike", "p", Sex.MALE, new Date(), "");
         authenticationService.register(userRequest);
         User user = userRepo.findByEmail("selflike@example.com").get();
 
@@ -347,8 +348,8 @@ public class UserServiceTest {
 
     @Test
     void testLikeUserAlreadyLiked() {
-        UserRequest user1Request = new UserRequest("User1", "Like", "user1like@example.com", "user1like", "p", "M", new Date(), "");
-        UserRequest user2Request = new UserRequest("User2", "Like", "user2like@example.com", "user2like", "p", "F", new Date(), "");
+        UserRequest user1Request = new UserRequest("User1", "Like", "user1like@example.com", "user1like", "p", Sex.MALE, new Date(), "");
+        UserRequest user2Request = new UserRequest("User2", "Like", "user2like@example.com", "user2like", "p", Sex.FEMALE, new Date(), "");
         authenticationService.register(user1Request);
         authenticationService.register(user2Request);
         User user2 = userRepo.findByEmail("user2like@example.com").get();
@@ -359,7 +360,7 @@ public class UserServiceTest {
 
     @Test
     void testDeleteNonProfileImage() throws Exception {
-        UserRequest userRequest = new UserRequest("Non", "Profile", "nonprofile@example.com", "nonprofile", "p", "F", new Date(), "");
+        UserRequest userRequest = new UserRequest("Non", "Profile", "nonprofile@example.com", "nonprofile", "p", Sex.FEMALE, new Date(), "");
         authenticationService.register(userRequest);
 
         MockMultipartFile file1 = new MockMultipartFile("file1", "first.jpg", "image/jpeg", "content1".getBytes());

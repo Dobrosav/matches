@@ -32,8 +32,9 @@ public class User implements Serializable, UserDetails {
 
     @Column(name = "admin")
     private Boolean admin;
+    @Enumerated(EnumType.STRING)
     @Column(name = "sex")
-    private String sex;
+    private Sex sex;
     @Column(name = "username")
     private String username;
     @Column(name = "dateofbirth")
@@ -56,7 +57,7 @@ public class User implements Serializable, UserDetails {
     public User() {
     }
 
-    public User(String name, String surname, String email, String password, Boolean premium, Boolean admin, String sex, String username, Date dateOfBirth, String disability) {
+    public User(String name, String surname, String email, String password, Boolean premium, Boolean admin, Sex sex, String username, Date dateOfBirth, String disability) {
         this.name = name;
         this.surname = surname;
         this.email = email;
@@ -72,7 +73,7 @@ public class User implements Serializable, UserDetails {
         this.interests = "";
     }
 
-    public static User createDefaultUser(String name, String surname, String email, String username, String password, String sex, Date dateOfBirth, String disability) {
+    public static User createDefaultUser(String name, String surname, String email, String username, String password, Sex sex, Date dateOfBirth, String disability) {
         return new User(name, surname, email, password, false, false, sex, username, dateOfBirth, disability);
     }
 
@@ -163,11 +164,11 @@ public class User implements Serializable, UserDetails {
         this.admin = admin;
     }
 
-    public String getSex() {
+    public Sex getSex() {
         return sex;
     }
 
-    public void setSex(String sex) {
+    public void setSex(Sex sex) {
         this.sex = sex;
     }
     

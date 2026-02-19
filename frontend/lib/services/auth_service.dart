@@ -18,16 +18,13 @@ class AuthService {
 
   String? get accessToken => _accessToken;
 
-  Future<Map<String, dynamic>> login(String username, String password) async {
+  Future<Map<String, dynamic>> login(String email, String password) async {
     final response = await http.post(
       Uri.parse('$baseUrl/auth/login'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
-      body: jsonEncode(<String, String>{
-        'username': username,
-        'password': password,
-      }),
+      body: jsonEncode(<String, String>{'email': email, 'password': password}),
     );
 
     if (response.statusCode == 200) {

@@ -9,6 +9,8 @@ import com.dobrosav.matches.db.repos.UserRepo;
 import com.dobrosav.matches.exception.ErrorType;
 import com.dobrosav.matches.exception.ServiceException;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -21,6 +23,8 @@ import java.util.UUID;
 
 @Service
 public class AuthenticationService {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthenticationService.class);
 
     private final UserRepo userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -37,7 +41,7 @@ public class AuthenticationService {
     }
 
     public AuthenticationResponse register(UserRequest request) {
-        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new ServiceException(ErrorType.USER_ALREADY_EXISTS, HttpStatus.CONFLICT);
         }
         var user = User.createDefaultUser(
@@ -50,25 +54,32 @@ public class AuthenticationService {
                 request.getDateOfBirth(),
                 request.getDisabilities()
         );
-        userRepository.save(user);
-        var jwtToken = jwtService.generateToken(user.getEmail());
-        var refreshToken = jwtService.generateRefreshToken(user.getEmail());
-        saveUserRefreshToken(user, refreshToken);
+        var savedUser = userRepository.save(user);
+        var jwtToken = jwtService.generateToken(savedUser.getEmail());
+        var refreshToken = jwtService.generateRefreshToken(savedUser.getEmail());
+        saveUserRefreshToken(savedUser, refreshToken);
         return new AuthenticationResponse(jwtToken, refreshToken);
     }
 
     public AuthenticationResponse authenticate(LoginRequest request) {
         try {
+            var user = userRepository.findByEmail(request.getEmail())
+                    .orElseThrow(() -> new ServiceException(ErrorType.USER_NOT_FOUND, HttpStatus.NOT_FOUND));
+            log.info("User found: {}", user.getEmail());
+            log.info("Encoded password from DB: {}", user.getPassword());
+            log.info("Raw password from request: {}", request.getPassword());
+            log.info("Encoded password from request: {}", passwordEncoder.encode(request.getPassword()));
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            request.getUsername(),
+                            request.getEmail(),
                             request.getPassword()
                     )
             );
         } catch (AuthenticationException e) {
+            log.error("Authentication failed: {}", e.getMessage());
             throw new ServiceException(ErrorType.INVALID_CREDENTIALS, HttpStatus.UNAUTHORIZED);
         }
-        var user = userRepository.findByUsername(request.getUsername())
+        var user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new ServiceException(ErrorType.USER_NOT_FOUND, HttpStatus.NOT_FOUND));
         var jwtToken = jwtService.generateToken(user.getEmail());
         var refreshToken = jwtService.generateRefreshToken(user.getEmail());

@@ -153,9 +153,10 @@ public class UserController {
             @PathVariable("email") String email,
             @RequestParam(name = "gender", required = false) String gender,
             @RequestParam(name = "minAge", required = false) Integer minAge,
-            @RequestParam(name = "maxAge", required = false) Integer maxAge
+            @RequestParam(name = "maxAge", required = false) Integer maxAge,
+            @RequestParam(name = "location", required = false) String location
     ) {
-        List<UserResponse> users = userService.getFilteredFeed(email, gender, minAge, maxAge);
+        List<UserResponse> users = userService.getFilteredFeed(email, gender, minAge, maxAge, location);
         return new ResponseEntity<>(users, HttpStatus.OK);
     }
 

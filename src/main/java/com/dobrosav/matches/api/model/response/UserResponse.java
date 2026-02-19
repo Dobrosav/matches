@@ -1,6 +1,8 @@
 package com.dobrosav.matches.api.model.response;
 
+import com.dobrosav.matches.db.entities.Sex;
 import com.dobrosav.matches.db.entities.User;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -12,8 +14,9 @@ public class UserResponse implements Serializable {
     private String email;
     private Boolean premium;
     private Boolean admin;
-    private String sex;
+    private Sex sex;
     private String username;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private Date dateOfBirth;
     private String disability;
     private String location;
@@ -23,7 +26,7 @@ public class UserResponse implements Serializable {
     public UserResponse() {
     }
 
-    public UserResponse(Integer id, String name, String surname, String email, Boolean premium, Boolean admin, String sex, String username, Date dateOfBirth, String disability, String location, String bio, String interests) {
+    public UserResponse(Integer id, String name, String surname, String email, Boolean premium, Boolean admin, Sex sex, String username, Date dateOfBirth, String disability, String location, String bio, String interests) {
         this.id = id;
         this.name = name;
         this.surname = surname;
@@ -103,11 +106,11 @@ public class UserResponse implements Serializable {
         this.admin = admin;
     }
 
-    public String getSex() {
+    public Sex getSex() {
         return sex;
     }
 
-    public void setSex(String sex) {
+    public void setSex(Sex sex) {
         this.sex = sex;
     }
 

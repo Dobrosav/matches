@@ -92,13 +92,13 @@ public class PojoTest {
 
     @Test
     public void testUserConstructorsAndToString() {
-        User user = new User("Name", "Surname", "email@test.com", "password", false, false, "M", "username", new Date(), "none");
+        User user = new User("Name", "Surname", "email@test.com", "password", false, false, Sex.MALE, "username", new Date(), "none");
         assertNotNull(user);
         assertEquals("Name", user.getName());
         assertEquals("email@test.com", user.getEmail());
         assertEquals("", user.getLocation()); 
 
-        User defaultUser = User.createDefaultUser("DefName", "DefSurname", "def@test.com", "defuser", "defpass", "F", new Date(), "none");
+        User defaultUser = User.createDefaultUser("DefName", "DefSurname", "def@test.com", "defuser", "defpass", Sex.FEMALE, new Date(), "none");
         assertNotNull(defaultUser);
         assertFalse(defaultUser.getPremium());
         assertFalse(defaultUser.getAdmin());
@@ -113,11 +113,11 @@ public class PojoTest {
     @Test
     public void testUserResponseConstructors() {
         Date dob = new Date();
-        UserResponse resp = new UserResponse(1, "Name", "Surname", "email@test.com", false, false, "M", "username", dob, "none", "loc", "bio", "interests");
+        UserResponse resp = new UserResponse(1, "Name", "Surname", "email@test.com", false, false, Sex.MALE, "username", dob, "none", "loc", "bio", "interests");
         assertEquals(1, resp.getId());
         assertEquals("Name", resp.getName());
 
-        User user = new User("Name", "Surname", "email@test.com", "password", false, false, "M", "username", dob, "none");
+        User user = new User("Name", "Surname", "email@test.com", "password", false, false, Sex.MALE, "username", dob, "none");
         user.setId(1);
         user.setLocation("loc");
         user.setBio("bio");
