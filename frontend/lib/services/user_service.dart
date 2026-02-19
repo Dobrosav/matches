@@ -12,6 +12,7 @@ class UserService {
     String? gender,
     int? minAge,
     int? maxAge,
+    String? location,
   }) async {
     if (!_authService.isAuthenticated) {
       throw Exception('Not authenticated');
@@ -21,6 +22,7 @@ class UserService {
     if (gender != null) queryParameters['gender'] = gender;
     if (minAge != null) queryParameters['minAge'] = minAge.toString();
     if (maxAge != null) queryParameters['maxAge'] = maxAge.toString();
+    if (location != null) queryParameters['location'] = location;
 
     final uri = Uri.parse(
       '$baseUrl/users/$email/filtered-feed',

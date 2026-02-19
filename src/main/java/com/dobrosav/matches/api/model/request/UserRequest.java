@@ -1,6 +1,7 @@
 package com.dobrosav.matches.api.model.request;
 
 
+import com.dobrosav.matches.db.entities.Sex;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -27,8 +28,8 @@ public class UserRequest implements Serializable {
     @Size(min = 6, message = "Password must be at least 6 characters long")
     private String password;
     
-    @NotBlank(message = "Sex is required")
-    private String sex;
+    @NotNull(message = "Sex is required")
+    private Sex sex;
     
     @NotNull(message = "Date of birth is required")
     private Date dateOfBirth;
@@ -38,7 +39,7 @@ public class UserRequest implements Serializable {
     public UserRequest() {
     }
 
-    public UserRequest(String name, String surname, String email, String username, String password, String sex, Date dateOfBirth, String disabilities) {
+    public UserRequest(String name, String surname, String email, String username, String password, Sex sex, Date dateOfBirth, String disabilities) {
         this.name = name;
         this.surname = surname;
         this.email = email;
@@ -90,11 +91,11 @@ public class UserRequest implements Serializable {
         this.password = password;
     }
 
-    public String getSex() {
+    public Sex getSex() {
         return sex;
     }
 
-    public void setSex(String sex) {
+    public void setSex(Sex sex) {
         this.sex = sex;
     }
 

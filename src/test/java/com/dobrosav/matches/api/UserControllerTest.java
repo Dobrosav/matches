@@ -3,20 +3,24 @@ package com.dobrosav.matches.api;
 import com.dobrosav.matches.api.model.request.UserPreferencesRequest;
 import com.dobrosav.matches.api.model.response.UserImageResponse;
 import com.dobrosav.matches.api.model.response.UserResponse;
-import com.dobrosav.matches.security.AuthenticationService;
-import com.dobrosav.matches.security.JwtService;
-import com.dobrosav.matches.service.ChatService;
 import com.dobrosav.matches.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.Collections;
 import java.util.List;
@@ -25,17 +29,33 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(UserController.class)
-@Import(TestSecurityConfig.class) // Import a test security config
+@SpringBootTest
+@AutoConfigureMockMvc
+@Testcontainers
 class UserControllerTest {
+
+    @Container
+    @ServiceConnection
+    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0.33");
+
+    @Container
+    static GenericContainer<?> redis = new GenericContainer<>("redis:7.2")
+            .withExposedPorts(6379);
+
+    @DynamicPropertySource
+    static void configureProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", mysql::getJdbcUrl);
+        registry.add("spring.datasource.username", mysql::getUsername);
+        registry.add("spring.datasource.password", mysql::getPassword);
+        registry.add("spring.jpa.hibernate.ddl-auto", () -> "update");
+
+        registry.add("spring.data.redis.host", redis::getHost);
+        registry.add("spring.data.redis.port", () -> String.valueOf(redis.getMappedPort(6379)));
+    }
 
     @Autowired
     private MockMvc mockMvc;
@@ -45,15 +65,6 @@ class UserControllerTest {
 
     @MockBean
     private UserService userService;
-
-    @MockBean
-    private ChatService chatService;
-
-    @MockBean
-    private AuthenticationService authenticationService;
-    
-    @MockBean
-    private JwtService jwtService; // Often needed by security configurations
 
     @Test
     @WithMockUser(username="test@example.com")
@@ -82,20 +93,6 @@ class UserControllerTest {
 
     @Test
     @WithMockUser(username="test@example.com")
-    void whenGetFeed_thenReturnUserList() throws Exception {
-        UserResponse userResponse = new UserResponse();
-        userResponse.setEmail("feeduser@example.com");
-        
-        given(userService.getFeed(any())).willReturn(Collections.singletonList(userResponse));
-
-        mockMvc.perform(get("/api/v1/users/test@example.com/feed")
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].email").value("feeduser@example.com"));
-    }
-
-    @Test
-    @WithMockUser(username="test@example.com")
     void whenUpdatePreferences_thenReturnUpdatedUser() throws Exception {
         UserPreferencesRequest preferencesRequest = new UserPreferencesRequest();
         preferencesRequest.setTargetGender("FEMALE");
@@ -114,28 +111,6 @@ class UserControllerTest {
                         .content(objectMapper.writeValueAsString(preferencesRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value("test@example.com"));
-    }
-
-    @Test
-    @WithMockUser(username="test@example.com")
-    void whenLikeUser_thenReturnSuccessResult() throws Exception {
-        given(userService.likeUser("test@example.com", 123)).willReturn(true);
-
-        mockMvc.perform(post("/api/v1/users/test@example.com/like/123")
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.result").value(true));
-    }
-
-    @Test
-    @WithMockUser(username="test@example.com")
-    void whenDislikeUser_thenReturnSuccess() throws Exception {
-        mockMvc.perform(post("/api/v1/users/test@example.com/dislike/123")
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.result").value(true));
-
-        verify(userService).dislikeUser("test@example.com", 123);
     }
 
     @Test

@@ -19,7 +19,8 @@ public enum ErrorType {
     DAILY_LIKE_LIMIT_REACHED("115", "Daily like limit reached for non-premium users"),
     PREMIUM_FEATURE_ONLY("116", "This feature is available for premium users only"),
     INVALID_TOKEN("117", "Invalid token"),
-    INVALID_CREDENTIALS("118", "Invalid username or password");
+    INVALID_CREDENTIALS("118", "Invalid username or password"),
+    INVALID_REACTION("119", "Invalid reaction type");
 
     private final String code;
     private final String message;

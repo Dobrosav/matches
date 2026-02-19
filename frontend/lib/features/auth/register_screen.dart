@@ -170,7 +170,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   DropdownButtonFormField<String>(
                     value: _sex,
                     decoration: const InputDecoration(labelText: 'Sex'),
-                    items: ['MALE', 'FEMALE', 'OTHER']
+                    items: ['MALE', 'FEMALE', 'OTHERS']
                         .map(
                           (label) => DropdownMenuItem(
                             value: label,

@@ -296,7 +296,7 @@ public class UserService {
 
     @Cacheable(value = "filtered-feed", key = "#mail + '-' + #gender + '-' + #minAge + '-' + #maxAge")
     @Transactional(readOnly = true)
-    public List<UserResponse> getFilteredFeed(String mail, String gender, Integer minAge, Integer maxAge) {
+    public List<UserResponse> getFilteredFeed(String mail, String gender, Integer minAge, Integer maxAge, String location) {
         User currentUser = findByMail(mail);
 
         List<Integer> excludedUserIds = new ArrayList<>();
@@ -309,7 +309,7 @@ public class UserService {
             excludedUserIds.add(match.getUser2().getId());
         });
 
-        Specification<User> spec = UserSpecification.filter(excludedUserIds, gender, minAge, maxAge);
+        Specification<User> spec = UserSpecification.filter(excludedUserIds, gender, minAge, maxAge, location);
 
         Pageable pageable = PageRequest.of(0, 25);
         Page<User> feedUsers = userRepo.findAll(spec, pageable);
@@ -334,7 +334,10 @@ public class UserService {
                     if ("Any".equalsIgnoreCase(prefs.getTargetGender())) {
                         return true;
                     }
-                    return user.getSex().equalsIgnoreCase(prefs.getTargetGender());
+                    if (user.getSex() == null) {
+                        return false;
+                    }
+                    return user.getSex().name().equalsIgnoreCase(prefs.getTargetGender());
                 })
                 .map(userMapper::toDto)
                 .collect(Collectors.toList());

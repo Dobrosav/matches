@@ -63,12 +63,12 @@ class AuthenticationServiceTest {
     @Test
     void whenAuthenticate_thenReturnsAuthenticationResponse() {
         LoginRequest request = new LoginRequest();
-        request.setUsername("test@example.com");
+        request.setEmail("test@example.com");
         request.setPassword("password");
         User user = new User();
         user.setEmail("test@example.com");
 
-        when(userRepo.findByUsername("test@example.com")).thenReturn(Optional.of(user));
+        when(userRepo.findByEmail("test@example.com")).thenReturn(Optional.of(user));
         when(jwtService.generateToken(user.getEmail())).thenReturn("test-token");
         when(jwtService.generateRefreshToken(any(String.class))).thenReturn("test-refresh-token");
 

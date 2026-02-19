@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import '../auth/login_screen.dart';
+import '../../data/cities_data.dart'; // Import cities data
 
 import '../../widgets/custom_text_field.dart';
 
@@ -102,9 +103,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final interestsController = TextEditingController(
       text: user['interests'] ?? '',
     );
-    final locationController = TextEditingController(
-      text: user['location'] ?? '',
-    );
+
+    // Check if current location exists in our list
+    String? selectedLocation = user['location'];
+    bool locationExists = false;
+    if (selectedLocation != null) {
+      for (var cities in citiesByCountry.values) {
+        if (cities.contains(selectedLocation)) {
+          locationExists = true;
+          break;
+        }
+      }
+    }
+    if (!locationExists) selectedLocation = null;
+
     final formKey = GlobalKey<FormState>();
 
     showDialog(
@@ -118,12 +130,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  CustomTextField(
-                    controller: locationController,
-                    label: 'Location',
+                  DropdownButtonFormField<String>(
+                    value: selectedLocation,
+                    decoration: InputDecoration(
+                      labelText: 'Location',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
+                    items: [
+                      for (var entry in citiesByCountry.entries) ...[
+                        DropdownMenuItem(
+                          value: "HEADER_${entry.key}",
+                          enabled: false,
+                          child: Text(
+                            entry.key,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ),
+                        for (var city in entry.value)
+                          DropdownMenuItem(
+                            value: city,
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 16.0),
+                              child: Text(city),
+                            ),
+                          ),
+                      ],
+                    ],
+                    onChanged: (value) {
+                      if (value != null && !value.startsWith("HEADER_")) {
+                        selectedLocation = value;
+                      }
+                    },
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your location';
+                      if (value == null ||
+                          value.isEmpty ||
+                          value.startsWith("HEADER_")) {
+                        return 'Please select your location';
                       }
                       return null;
                     },
@@ -170,7 +219,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     await _authService.updateProfile(
                       bio: bioController.text,
                       interests: interestsController.text,
-                      location: locationController.text,
+                      location: selectedLocation ?? '',
                     );
                     if (!context.mounted) return;
                     Navigator.pop(dialogContext);
