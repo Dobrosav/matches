@@ -1,5 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:mime/mime.dart';
 
 class AuthService {
   static const String baseUrl = 'http://localhost:8080/api/v1';
@@ -128,6 +131,62 @@ class AuthService {
     } else {
       _handleError(response);
       throw Exception('Failed to update profile');
+    }
+  }
+
+  Future<void> uploadImage(String email, XFile imageFile) async {
+    if (_accessToken == null) {
+      throw Exception('Not authenticated');
+    }
+
+    final uri = Uri.parse('$baseUrl/users/$email/images');
+    final request = http.MultipartRequest('POST', uri);
+
+    request.headers['Authorization'] = 'Bearer $_accessToken';
+
+    final mimeType = lookupMimeType(imageFile.path);
+    final contentType = mimeType != null
+        ? MediaType.parse(mimeType)
+        : MediaType('image', 'jpeg');
+
+    final bytes = await imageFile.readAsBytes();
+    final file = http.MultipartFile.fromBytes(
+      'file',
+      bytes,
+      filename: imageFile.name,
+      contentType: contentType,
+    );
+
+    request.files.add(file);
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode != 201) {
+      _handleError(response);
+      throw Exception('Failed to upload image');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getUserImages(String email) async {
+    if (_accessToken == null) {
+      throw Exception('Not authenticated');
+    }
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/users/$email/images'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $_accessToken',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.cast<Map<String, dynamic>>();
+    } else {
+      _handleError(response);
+      throw Exception('Failed to get user images');
     }
   }
 
