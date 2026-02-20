@@ -4,7 +4,9 @@ import jakarta.persistence.*;
 import java.io.Serializable;
 import java.util.Date;
 
-@Table(name = "user_likes")
+@Table(name = "user_likes", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"liker_id", "liked_id"})
+})
 @Entity
 public class UserLike implements Serializable {
     @Id

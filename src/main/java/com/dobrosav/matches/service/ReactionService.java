@@ -46,6 +46,12 @@ public class ReactionService {
     }
 
     private void handleLike(User fromUser, User toUser) {
+        // Check if like already exists
+        Optional<UserLike> existingLike = userLikeRepo.findByLikerAndLiked(fromUser, toUser);
+        if (existingLike.isPresent()) {
+            return; // Already liked, do nothing
+        }
+
         UserLike userLike = new UserLike(fromUser, toUser);
         userLikeRepo.save(userLike);
 

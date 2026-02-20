@@ -1,4 +1,7 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:image_cropper/image_cropper.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../services/auth_service.dart';
 import '../auth/login_screen.dart';
 import '../../data/cities_data.dart'; // Import cities data
@@ -15,11 +18,134 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final _authService = AuthService();
   Future<Map<String, dynamic>>? _profileFuture;
+  String? _profileImageUrl;
+  bool _isUploading = false;
 
   @override
   void initState() {
     super.initState();
     _profileFuture = _authService.getProfile();
+    _loadProfileImage();
+  }
+
+  Future<void> _loadProfileImage() async {
+    try {
+      // We need to wait for the profile to be loaded first to get the email
+      // Or we can just get it again since it's cached/cheap
+      final profile = await _authService.getProfile();
+      final email = profile['email'];
+      final images = await _authService.getUserImages(email);
+
+      String? profileUrl;
+      for (var img in images) {
+        if (img['profileImage'] == true) {
+          profileUrl =
+              '${AuthService.baseUrl}/users/$email/images/${img['id']}';
+          break;
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _profileImageUrl = profileUrl;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading profile image: $e');
+    }
+  }
+
+  Future<void> _pickAndUploadImage() async {
+    final picker = ImagePicker();
+    final XFile? pickedFile = await picker.pickImage(
+      source: ImageSource.gallery,
+    );
+
+    if (pickedFile != null) {
+      if (!mounted) return;
+
+      XFile? fileToUpload;
+
+      // Skip cropping on web due to UI issues, use direct upload
+      if (kIsWeb) {
+        fileToUpload = pickedFile;
+      } else {
+        // Use cropper on mobile platforms
+        CroppedFile? croppedFile;
+        try {
+          croppedFile = await ImageCropper().cropImage(
+            sourcePath: pickedFile.path,
+            aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+            compressQuality: 70,
+            maxWidth: 800,
+            maxHeight: 800,
+            compressFormat: ImageCompressFormat.jpg,
+            uiSettings: [
+              AndroidUiSettings(
+                toolbarTitle: 'Edit Photo',
+                toolbarColor: Colors.deepPurple,
+                toolbarWidgetColor: Colors.white,
+                initAspectRatio: CropAspectRatioPreset.square,
+                lockAspectRatio: true,
+              ),
+              IOSUiSettings(
+                title: 'Edit Photo',
+                aspectRatioLockEnabled: true,
+              ),
+            ],
+          );
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Failed to crop image: ${e.toString().replaceAll('Exception: ', '')}'),
+              ),
+            );
+          }
+          return;
+        }
+
+        if (croppedFile != null) {
+          fileToUpload = XFile(croppedFile.path);
+        }
+      }
+
+      if (fileToUpload != null) {
+        setState(() {
+          _isUploading = true;
+        });
+
+        try {
+          final profile = await _authService.getProfile();
+          final email = profile['email'];
+
+          await _authService.uploadImage(email, fileToUpload);
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Image uploaded successfully')),
+            );
+            _loadProfileImage();
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Failed to upload image: ${e.toString().replaceAll('Exception: ', '')}',
+                ),
+              ),
+            );
+          }
+        } finally {
+          if (mounted) {
+            setState(() {
+              _isUploading = false;
+            });
+          }
+        }
+      }
+    }
   }
 
   void _logout() {
@@ -56,10 +182,58 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Center(
-                  child: CircleAvatar(
-                    radius: 50,
-                    child: Icon(Icons.person, size: 50),
+                Center(
+                  child: Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 50,
+                        backgroundColor: Colors.grey[200],
+                        backgroundImage: _profileImageUrl != null
+                            ? NetworkImage(
+                                _profileImageUrl!,
+                                headers: {
+                                  'Authorization':
+                                      'Bearer ${_authService.accessToken}',
+                                },
+                              )
+                            : null,
+                        child: _profileImageUrl == null
+                            ? const Icon(
+                                Icons.person,
+                                size: 50,
+                                color: Colors.grey,
+                              )
+                            : null,
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: GestureDetector(
+                          onTap: _isUploading ? null : _pickAndUploadImage,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: Colors.blue,
+                              shape: BoxShape.circle,
+                            ),
+                            child: _isUploading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.camera_alt,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -270,6 +444,161 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Text(value ?? 'N/A', style: const TextStyle(fontSize: 16)),
           const Divider(),
         ],
+      ),
+    );
+  }
+}
+
+class _CustomCropperDialog extends StatefulWidget {
+  final Widget cropper;
+  final VoidCallback initCropper;
+  final Future<String?> Function() crop;
+  final ValueChanged<RotationAngle> rotate;
+
+  const _CustomCropperDialog({
+    super.key,
+    required this.cropper,
+    required this.initCropper,
+    required this.crop,
+    required this.rotate,
+  });
+
+  @override
+  State<_CustomCropperDialog> createState() => _CustomCropperDialogState();
+}
+
+class _CustomCropperDialogState extends State<_CustomCropperDialog> {
+  bool _isCropping = false;
+  bool _isCropperReady = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (!mounted) return;
+      widget.initCropper();
+      await Future.delayed(const Duration(milliseconds: 300));
+      if (mounted) {
+        setState(() {
+          _isCropperReady = true;
+        });
+      }
+    });
+  }
+
+  Future<void> _handleCrop() async {
+    setState(() {
+      _isCropping = true;
+    });
+
+    try {
+      // Add a timeout to prevent infinite hanging
+      final result = await widget.crop().timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          throw Exception('Cropping timed out');
+        },
+      );
+
+      if (!mounted) return;
+
+      if (result != null) {
+        Navigator.of(context).pop(result);
+      } else {
+        // Only show error if result is null (which might mean user cancelled or failure)
+        // But usually crop() returns path if successful.
+        // If it returns null, it might be just cancelled internally?
+        // Let's assume null is "failed to crop" in this context since we are explicitly clicking Save
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not crop image (result was null)'),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Error'),
+          content: Text('Failed to crop image: $e'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCropping = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Builder(
+        builder: (context) {
+          return Container(
+            width: 800,
+            height: 600,
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                Expanded(child: widget.cropper),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      onPressed: _isCropping
+                          ? null
+                          : () =>
+                                widget.rotate(RotationAngle.counterClockwise90),
+                      icon: const Icon(Icons.rotate_left),
+                      tooltip: 'Rotate Left',
+                    ),
+                    IconButton(
+                      onPressed: _isCropping
+                          ? null
+                          : () => widget.rotate(RotationAngle.clockwise90),
+                      icon: const Icon(Icons.rotate_right),
+                      tooltip: 'Rotate Right',
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: _isCropping
+                          ? null
+                          : () => Navigator.of(context).pop(),
+                      child: const Text('Cancel'),
+                    ),
+                    const SizedBox(width: 16),
+                    ElevatedButton(
+                      onPressed: _isCropping ? null : _handleCrop,
+                      child: _isCropping
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text('Save'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
