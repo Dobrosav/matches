@@ -15,6 +15,8 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   final AuthService _authService = AuthService();
   String? _userEmail;
+  bool _isPremium = false;
+  String? _userLocation;
   bool _isLoading = true;
 
   @override
@@ -29,6 +31,8 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         setState(() {
           _userEmail = profile['email'];
+          _isPremium = profile['premium'] ?? false;
+          _userLocation = profile['location'];
           _isLoading = false;
         });
       }
@@ -61,7 +65,11 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     final List<Widget> _widgetOptions = <Widget>[
-      FeedScreen(userEmail: _userEmail!),
+      FeedScreen(
+        userEmail: _userEmail!,
+        isPremium: _isPremium,
+        userLocation: _userLocation,
+      ),
       MatchesScreen(userEmail: _userEmail!),
       const ProfileScreen(),
     ];

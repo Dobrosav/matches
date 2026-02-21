@@ -6,6 +6,8 @@ class FilterDialog extends StatefulWidget {
   final int? initialMinAge;
   final int? initialMaxAge;
   final String? initialLocation;
+  final bool isPremium;
+  final String? userLocation;
 
   const FilterDialog({
     super.key,
@@ -13,6 +15,8 @@ class FilterDialog extends StatefulWidget {
     this.initialMinAge,
     this.initialMaxAge,
     this.initialLocation,
+    required this.isPremium,
+    this.userLocation,
   });
 
   @override
@@ -37,9 +41,41 @@ class _FilterDialogState extends State<FilterDialog> {
 
   @override
   Widget build(BuildContext context) {
-    // Generate a flat list of all cities across all countries and sort them alphabetically
-    final List<String> allCities =
-        citiesByCountry.values.expand((cities) => cities).toList()..sort();
+    List<String> locationOptions = ['Any'];
+
+    if (widget.isPremium) {
+      // Generate a flat list of all cities across all countries and sort them alphabetically
+      final List<String> allCities =
+          citiesByCountry.values.expand((cities) => cities).toList()..sort();
+      locationOptions.addAll(allCities);
+    } else {
+      // Find the user's country
+      String? userCountry;
+      if (widget.userLocation != null && widget.userLocation!.isNotEmpty) {
+        for (var entry in citiesByCountry.entries) {
+          if (entry.value.contains(widget.userLocation)) {
+            userCountry = entry.key;
+            break;
+          }
+        }
+      }
+
+      if (userCountry != null) {
+        final List<String> countryCities = List.from(
+          citiesByCountry[userCountry]!,
+        )..sort();
+        locationOptions.addAll(countryCities);
+      } else if (widget.userLocation != null &&
+          widget.userLocation!.isNotEmpty) {
+        // Fallback if country not found but location exists
+        locationOptions.add(widget.userLocation!);
+      }
+    }
+
+    // Ensure selected location is in the list, otherwise default to 'Any'
+    if (!locationOptions.contains(_selectedLocation)) {
+      _selectedLocation = 'Any';
+    }
 
     return AlertDialog(
       title: const Text('Filter Matches'),
@@ -99,14 +135,14 @@ class _FilterDialogState extends State<FilterDialog> {
                   _selectedLocation = newValue!;
                 });
               },
-              items: <String>['Any', ...allCities]
-                  .map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  })
-                  .toList(),
+              items: locationOptions.map<DropdownMenuItem<String>>((
+                String value,
+              ) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
             ),
           ],
         ),

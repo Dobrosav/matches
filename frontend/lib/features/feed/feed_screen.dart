@@ -9,8 +9,15 @@ import 'user_card.dart';
 
 class FeedScreen extends StatefulWidget {
   final String userEmail;
+  final bool isPremium;
+  final String? userLocation;
 
-  const FeedScreen({super.key, required this.userEmail});
+  const FeedScreen({
+    super.key,
+    required this.userEmail,
+    required this.isPremium,
+    this.userLocation,
+  });
 
   @override
   State<FeedScreen> createState() => _FeedScreenState();
@@ -84,6 +91,8 @@ class _FeedScreenState extends State<FeedScreen> {
         initialMinAge: _minAge,
         initialMaxAge: _maxAge,
         initialLocation: _selectedLocation,
+        isPremium: widget.isPremium,
+        userLocation: widget.userLocation,
       ),
     );
 
@@ -137,7 +146,39 @@ class _FeedScreenState extends State<FeedScreen> {
           ),
         ],
       ),
-      body: _isLoading
+      body:
+          (!widget.isPremium &&
+              (widget.userLocation == null || widget.userLocation!.isEmpty))
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.location_off,
+                      size: 64,
+                      color: Colors.grey,
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Location Required',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Please set your location in your profile to discover people near you.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
           ? Center(child: Text('Error: $_errorMessage'))
