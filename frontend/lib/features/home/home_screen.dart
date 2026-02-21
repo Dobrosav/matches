@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../feed/feed_screen.dart';
 import '../profile/profile_screen.dart';
+import '../matches/matches_screen.dart';
 import '../../services/auth_service.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -61,7 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final List<Widget> _widgetOptions = <Widget>[
       FeedScreen(userEmail: _userEmail!),
-      const Center(child: Text('Matches (Coming Soon)')),
+      MatchesScreen(userEmail: _userEmail!),
       const ProfileScreen(),
     ];
 
