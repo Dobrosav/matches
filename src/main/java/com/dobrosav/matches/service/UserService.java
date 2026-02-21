@@ -12,6 +12,7 @@ import com.dobrosav.matches.exception.ErrorType;
 import com.dobrosav.matches.exception.ServiceException;
 import com.dobrosav.matches.mapper.UserMapper;
 import com.dobrosav.matches.db.specifications.UserSpecification;
+import com.dobrosav.matches.utils.CitiesData;
 import org.springframework.data.jpa.domain.Specification;
 import org.joda.time.DateTime;
 import org.joda.time.Years;
@@ -309,7 +310,42 @@ public class UserService {
             excludedUserIds.add(match.getUser2().getId());
         });
 
-        Specification<User> spec = UserSpecification.filter(excludedUserIds, gender, minAge, maxAge, location);
+        List<String> allowedLocations = new ArrayList<>();
+
+        if (!Boolean.TRUE.equals(currentUser.getPremium())) {
+            // Non-premium user MUST have a location to see feed
+            if (currentUser.getLocation() == null || currentUser.getLocation().isEmpty()) {
+                return new ArrayList<>(); // Return empty list, frontend will handle UI
+            }
+
+            // Find country for user's location
+            String country = CitiesData.getCountryForCity(currentUser.getLocation());
+            if (country != null) {
+                // Add all cities from that country to allowed locations
+                allowedLocations.addAll(CitiesData.CITIES_BY_COUNTRY.get(country));
+            } else {
+                // Fallback, just the user's city
+                allowedLocations.add(currentUser.getLocation());
+            }
+
+            // If user selected a specific location filter, and it's within their allowed locations, use it
+            if (location != null && !location.isEmpty()) {
+                if (allowedLocations.contains(location)) {
+                    allowedLocations.clear();
+                    allowedLocations.add(location);
+                } else {
+                    // Filtered location is not in their country, return empty
+                    return new ArrayList<>();
+                }
+            }
+        } else {
+            // Premium user
+            if (location != null && !location.isEmpty()) {
+                allowedLocations.add(location);
+            }
+        }
+
+        Specification<User> spec = UserSpecification.filter(excludedUserIds, gender, minAge, maxAge, allowedLocations);
 
         Pageable pageable = PageRequest.of(0, 25);
         Page<User> feedUsers = userRepo.findAll(spec, pageable);

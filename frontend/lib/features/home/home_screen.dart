@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../feed/feed_screen.dart';
 import '../profile/profile_screen.dart';
+import '../matches/matches_screen.dart';
 import '../../services/auth_service.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -14,6 +15,8 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   final AuthService _authService = AuthService();
   String? _userEmail;
+  bool _isPremium = false;
+  String? _userLocation;
   bool _isLoading = true;
 
   @override
@@ -28,6 +31,8 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         setState(() {
           _userEmail = profile['email'];
+          _isPremium = profile['premium'] ?? false;
+          _userLocation = profile['location'];
           _isLoading = false;
         });
       }
@@ -60,8 +65,12 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     final List<Widget> _widgetOptions = <Widget>[
-      FeedScreen(userEmail: _userEmail!),
-      const Center(child: Text('Matches (Coming Soon)')),
+      FeedScreen(
+        userEmail: _userEmail!,
+        isPremium: _isPremium,
+        userLocation: _userLocation,
+      ),
+      MatchesScreen(userEmail: _userEmail!),
       const ProfileScreen(),
     ];
 

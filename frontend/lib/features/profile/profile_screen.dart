@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../services/auth_service.dart';
+import '../../services/user_service.dart';
 import '../auth/login_screen.dart';
 import '../../data/cities_data.dart'; // Import cities data
 
@@ -17,6 +18,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final _authService = AuthService();
+  final _userService = UserService();
   Future<Map<String, dynamic>>? _profileFuture;
   String? _profileImageUrl;
   bool _isUploading = false;
@@ -88,17 +90,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 initAspectRatio: CropAspectRatioPreset.square,
                 lockAspectRatio: true,
               ),
-              IOSUiSettings(
-                title: 'Edit Photo',
-                aspectRatioLockEnabled: true,
-              ),
+              IOSUiSettings(title: 'Edit Photo', aspectRatioLockEnabled: true),
             ],
           );
         } catch (e) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Failed to crop image: ${e.toString().replaceAll('Exception: ', '')}'),
+                content: Text(
+                  'Failed to crop image: ${e.toString().replaceAll('Exception: ', '')}',
+                ),
               ),
             );
           }
@@ -146,6 +147,59 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
       }
     }
+  }
+
+  void _showUpgradePremiumDialog(String email) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Upgrade to Premium'),
+          content: const Text(
+            'Get unlimited likes, see who liked you, and much more! Do you want to upgrade your account to Premium?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(dialogContext); // Close dialog first
+                try {
+                  await _userService.setPremium(email, true);
+                  if (mounted) {
+                    setState(() {
+                      _profileFuture = _authService.getProfile();
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Successfully upgraded to Premium!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to upgrade: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.amber,
+                foregroundColor: Colors.black,
+              ),
+              child: const Text('Upgrade Now'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _logout() {
@@ -235,6 +289,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ],
                   ),
+                ),
+                const SizedBox(height: 16),
+                Center(
+                  child: user['premium'] == true
+                      ? Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.amber),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.star, color: Colors.amber),
+                              SizedBox(width: 8),
+                              Text(
+                                'Premium Member',
+                                style: TextStyle(
+                                  color: Colors.amber,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ElevatedButton.icon(
+                          onPressed: () =>
+                              _showUpgradePremiumDialog(user['email']),
+                          icon: const Icon(Icons.star),
+                          label: const Text('Upgrade to Premium'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.amber,
+                            foregroundColor: Colors.black,
+                            elevation: 4,
+                          ),
+                        ),
                 ),
                 const SizedBox(height: 16),
                 Center(

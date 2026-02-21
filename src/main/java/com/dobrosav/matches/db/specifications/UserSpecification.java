@@ -15,7 +15,7 @@ import java.util.List;
 
 public class UserSpecification {
 
-    public static Specification<User> filter(Collection<Integer> excludedIds, String gender, Integer minAge, Integer maxAge, String location) {
+    public static Specification<User> filter(Collection<Integer> excludedIds, String gender, Integer minAge, Integer maxAge, List<String> allowedLocations) {
         return (Root<User> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -44,8 +44,8 @@ public class UserSpecification {
                 predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("dateOfBirth"), earliestBirthDate));
             }
 
-            if (location != null && !location.isEmpty()) {
-                predicates.add(criteriaBuilder.equal(root.get("location"), location));
+            if (allowedLocations != null && !allowedLocations.isEmpty()) {
+                predicates.add(root.get("location").in(allowedLocations));
             }
 
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
