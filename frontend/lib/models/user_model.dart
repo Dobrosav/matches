@@ -9,6 +9,7 @@ class UserModel {
   final String? bio;
   final String? interests;
   final String? location;
+  final bool isPremium;
 
   UserModel({
     required this.id,
@@ -21,6 +22,7 @@ class UserModel {
     this.bio,
     this.interests,
     this.location,
+    this.isPremium = false,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -42,6 +44,7 @@ class UserModel {
       bio: json['bio'],
       interests: json['interests'],
       location: json['location'],
+      isPremium: json['premium'] ?? false,
     );
   }
 }

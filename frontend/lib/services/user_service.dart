@@ -65,4 +65,24 @@ class UserService {
       throw Exception('Failed to load matches: ${response.statusCode}');
     }
   }
+
+  Future<void> setPremium(String email, bool isPremium) async {
+    if (!_authService.isAuthenticated) {
+      throw Exception('Not authenticated');
+    }
+
+    final response = await http.put(
+      Uri.parse('$baseUrl/users/$email/premium?isPremium=$isPremium'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer ${_authService.accessToken}',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Failed to update premium status: ${response.statusCode}',
+      );
+    }
+  }
 }

@@ -37,7 +37,9 @@ class _FilterDialogState extends State<FilterDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final List<String> cities = citiesByCountry['Serbia']!;
+    // Generate a flat list of all cities across all countries and sort them alphabetically
+    final List<String> allCities =
+        citiesByCountry.values.expand((cities) => cities).toList()..sort();
 
     return AlertDialog(
       title: const Text('Filter Matches'),
@@ -97,14 +99,14 @@ class _FilterDialogState extends State<FilterDialog> {
                   _selectedLocation = newValue!;
                 });
               },
-              items: <String>['Any', ...cities].map<DropdownMenuItem<String>>((
-                String value,
-              ) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
+              items: <String>['Any', ...allCities]
+                  .map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  })
+                  .toList(),
             ),
           ],
         ),

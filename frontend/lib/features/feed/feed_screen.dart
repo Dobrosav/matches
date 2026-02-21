@@ -3,6 +3,7 @@ import 'package:card_swiper/card_swiper.dart';
 import '../../models/user_model.dart';
 import '../../services/user_service.dart';
 import '../../services/reaction_service.dart';
+import '../../services/filter_service.dart';
 import 'filter_dialog.dart';
 import 'user_card.dart';
 
@@ -18,6 +19,7 @@ class FeedScreen extends StatefulWidget {
 class _FeedScreenState extends State<FeedScreen> {
   final UserService _userService = UserService();
   final ReactionService _reactionService = ReactionService();
+  final FilterService _filterService = FilterService();
   final SwiperController _swiperController = SwiperController();
 
   List<UserModel> _users = [];
@@ -33,6 +35,17 @@ class _FeedScreenState extends State<FeedScreen> {
   @override
   void initState() {
     super.initState();
+    _loadSavedFiltersAndFetch();
+  }
+
+  Future<void> _loadSavedFiltersAndFetch() async {
+    final filters = await _filterService.loadFilters();
+    setState(() {
+      _selectedGender = filters['gender'];
+      _minAge = filters['minAge'];
+      _maxAge = filters['maxAge'];
+      _selectedLocation = filters['location'];
+    });
     _fetchUsers();
   }
 
@@ -75,11 +88,21 @@ class _FeedScreenState extends State<FeedScreen> {
     );
 
     if (result != null) {
+      // Save filters locally
+      await _filterService.saveFilters(
+        gender: result['gender'] == 'Any' ? null : result['gender'],
+        minAge: result['minAge'],
+        maxAge: result['maxAge'],
+        location: result['location'] == 'Any' ? null : result['location'],
+      );
+
       setState(() {
-        _selectedGender = result['gender'];
+        _selectedGender = result['gender'] == 'Any' ? null : result['gender'];
         _minAge = result['minAge'];
         _maxAge = result['maxAge'];
-        _selectedLocation = result['location'];
+        _selectedLocation = result['location'] == 'Any'
+            ? null
+            : result['location'];
       });
       _fetchUsers();
     }
