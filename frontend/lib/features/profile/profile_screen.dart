@@ -6,6 +6,7 @@ import '../../services/auth_service.dart';
 import '../../services/user_service.dart';
 import '../auth/login_screen.dart';
 import '../../data/cities_data.dart'; // Import cities data
+import 'settings_screen.dart';
 
 import '../../widgets/custom_text_field.dart';
 
@@ -216,7 +217,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
       appBar: AppBar(
         title: const Text('Profile'),
         actions: [
-          IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            tooltip: 'Settings & Accessibility',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Logout',
+            onPressed: _logout,
+          ),
         ],
       ),
       body: FutureBuilder<Map<String, dynamic>>(
@@ -239,51 +254,60 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Center(
                   child: Stack(
                     children: [
-                      CircleAvatar(
-                        radius: 50,
-                        backgroundColor: Colors.grey[200],
-                        backgroundImage: _profileImageUrl != null
-                            ? NetworkImage(
-                                _profileImageUrl!,
-                                headers: {
-                                  'Authorization':
-                                      'Bearer ${_authService.accessToken}',
-                                },
-                              )
-                            : null,
-                        child: _profileImageUrl == null
-                            ? const Icon(
-                                Icons.person,
-                                size: 50,
-                                color: Colors.grey,
-                              )
-                            : null,
+                      Semantics(
+                        label: 'Profile picture',
+                        image: true,
+                        child: CircleAvatar(
+                          radius: 50,
+                          backgroundColor: Colors.grey[200],
+                          backgroundImage: _profileImageUrl != null
+                              ? NetworkImage(
+                                  _profileImageUrl!,
+                                  headers: {
+                                    'Authorization':
+                                        'Bearer ${_authService.accessToken}',
+                                  },
+                                )
+                              : null,
+                          child: _profileImageUrl == null
+                              ? const Icon(
+                                  Icons.person,
+                                  size: 50,
+                                  color: Colors.grey,
+                                )
+                              : null,
+                        ),
                       ),
                       Positioned(
                         bottom: 0,
                         right: 0,
-                        child: GestureDetector(
-                          onTap: _isUploading ? null : _pickAndUploadImage,
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(
-                              color: Colors.blue,
-                              shape: BoxShape.circle,
+                        child: Semantics(
+                          label: 'Upload new profile picture',
+                          button: true,
+                          child: Material(
+                            color: Colors.blue,
+                            shape: const CircleBorder(),
+                            clipBehavior: Clip.hardEdge,
+                            child: InkWell(
+                              onTap: _isUploading ? null : _pickAndUploadImage,
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                child: _isUploading
+                                    ? const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Icon(
+                                        Icons.camera_alt,
+                                        color: Colors.white,
+                                        size: 16,
+                                      ),
+                              ),
                             ),
-                            child: _isUploading
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Icon(
-                                    Icons.camera_alt,
-                                    color: Colors.white,
-                                    size: 20,
-                                  ),
                           ),
                         ),
                       ),
@@ -293,29 +317,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 16),
                 Center(
                   child: user['premium'] == true
-                      ? Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.amber.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.amber),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.star, color: Colors.amber),
-                              SizedBox(width: 8),
-                              Text(
-                                'Premium Member',
-                                style: TextStyle(
-                                  color: Colors.amber,
-                                  fontWeight: FontWeight.bold,
+                      ? Semantics(
+                          label: 'You are a Premium Member',
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: Colors.amber),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.star, color: Colors.amber),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Premium Member',
+                                  style: TextStyle(
+                                    color: Colors.amber,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         )
                       : ElevatedButton.icon(

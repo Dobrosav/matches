@@ -142,6 +142,7 @@ class _FeedScreenState extends State<FeedScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list),
+            tooltip: 'Filter users',
             onPressed: _showFilterDialog,
           ),
         ],
@@ -213,27 +214,37 @@ class _FeedScreenState extends State<FeedScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      IconButton(
-                        icon: const Icon(
-                          Icons.close,
-                          color: Colors.red,
-                          size: 40,
+                      Semantics(
+                        label: 'Pass user',
+                        button: true,
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.close,
+                            color: Colors.red,
+                            size: 40,
+                          ),
+                          tooltip: 'Pass',
+                          onPressed: () {
+                            _handleReaction('dislike');
+                            _swiperController.next();
+                          },
                         ),
-                        onPressed: () {
-                          _handleReaction('dislike');
-                          _swiperController.next();
-                        },
                       ),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.favorite,
-                          color: Colors.green,
-                          size: 40,
+                      Semantics(
+                        label: 'Like user',
+                        button: true,
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.favorite,
+                            color: Colors.green,
+                            size: 40,
+                          ),
+                          tooltip: 'Like',
+                          onPressed: () {
+                            _handleReaction('like');
+                            _swiperController.next();
+                          },
                         ),
-                        onPressed: () {
-                          _handleReaction('like');
-                          _swiperController.next();
-                        },
                       ),
                     ],
                   ),
