@@ -24,9 +24,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.multipart.MultipartFile;
+import org.joda.time.DateTime;
+import org.joda.time.Years;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -61,6 +64,186 @@ class UserServiceUnitTest {
 
     @InjectMocks
     private UserService userService;
+
+    // ... existing tests ...
+
+    @Test
+    void testFindByAge_WithBeginAndEnd() throws Exception {
+        User user1 = new User();
+        user1.setDateOfBirth(DateTime.now().minusYears(25).toDate());
+        User user2 = new User();
+        user2.setDateOfBirth(DateTime.now().minusYears(35).toDate());
+        
+        when(userRepo.findAll()).thenReturn(Arrays.asList(user1, user2));
+        when(userMapper.toDto(user1)).thenReturn(new UserResponse());
+        
+        List<UserResponse> result = userService.findByAge(20, 30);
+        
+        assertEquals(1, result.size());
+        verify(userMapper, times(1)).toDto(user1);
+    }
+    
+    @Test
+    void testFindByAge_WithBeginOnly() throws Exception {
+        User user1 = new User();
+        user1.setDateOfBirth(DateTime.now().minusYears(25).toDate());
+        User user2 = new User();
+        user2.setDateOfBirth(DateTime.now().minusYears(15).toDate());
+        
+        when(userRepo.findAll()).thenReturn(Arrays.asList(user1, user2));
+        when(userMapper.toDto(user1)).thenReturn(new UserResponse());
+        
+        List<UserResponse> result = userService.findByAge(20, null);
+        
+        assertEquals(1, result.size());
+        verify(userMapper, times(1)).toDto(user1);
+    }
+
+    @Test
+    void testGetImage_Success() {
+        User user = new User();
+        user.setEmail("test@test.com");
+        
+        UserImage image = new UserImage();
+        image.setId(1);
+        
+        when(userRepo.findByEmail("test@test.com")).thenReturn(Optional.of(user));
+        when(userImageRepo.findByIdAndUser(1, user)).thenReturn(Optional.of(image));
+        
+        UserImage result = userService.getImage("test@test.com", 1);
+        
+        assertNotNull(result);
+        assertEquals(1, result.getId());
+    }
+
+    @Test
+    void testGetImage_NotFound() {
+        User user = new User();
+        user.setEmail("test@test.com");
+        
+        when(userRepo.findByEmail("test@test.com")).thenReturn(Optional.of(user));
+        when(userImageRepo.findByIdAndUser(1, user)).thenReturn(Optional.empty());
+        
+        ServiceException exception = assertThrows(ServiceException.class, () -> userService.getImage("test@test.com", 1));
+        assertEquals(HttpStatus.NOT_FOUND, exception.getHttpCode());
+    }
+
+    @Test
+    void testGetMatches() {
+        User currentUser = new User();
+        currentUser.setId(1);
+        currentUser.setEmail("test@test.com");
+        
+        User otherUser = new User();
+        otherUser.setId(2);
+        otherUser.setEmail("other@test.com");
+        
+        UserMatch match = new UserMatch();
+        match.setId(100);
+        match.setUser1(currentUser);
+        match.setUser2(otherUser);
+        
+        when(userRepo.findByEmail("test@test.com")).thenReturn(Optional.of(currentUser));
+        when(userMatchRepo.findAllMatchesForUser(currentUser)).thenReturn(Collections.singletonList(match));
+        
+        UserResponse otherResponse = new UserResponse();
+        otherResponse.setEmail("other@test.com");
+        when(userMapper.toDto(otherUser)).thenReturn(otherResponse);
+        
+        List<MatchResponse> results = userService.getMatches("test@test.com");
+        
+        assertEquals(1, results.size());
+        assertEquals(100, results.get(0).getMatchId());
+        assertEquals("other@test.com", results.get(0).getOtherUser().getEmail());
+    }
+
+    @Test
+    void testSearchUsers() {
+        User currentUser = new User();
+        currentUser.setId(1);
+        currentUser.setEmail("test@test.com");
+        UserPreferences prefs = new UserPreferences();
+        prefs.setMinAge(20);
+        prefs.setMaxAge(30);
+        prefs.setTargetGender("FEMALE");
+        currentUser.setPreferences(prefs);
+        
+        User target1 = new User();
+        target1.setId(2);
+        target1.setSex(Sex.FEMALE);
+        target1.setDateOfBirth(DateTime.now().minusYears(25).toDate());
+        
+        User target2 = new User(); // Wrong gender
+        target2.setId(3);
+        target2.setSex(Sex.MALE);
+        target2.setDateOfBirth(DateTime.now().minusYears(25).toDate());
+        
+        User target3 = new User(); // Wrong age
+        target3.setId(4);
+        target3.setSex(Sex.FEMALE);
+        target3.setDateOfBirth(DateTime.now().minusYears(35).toDate());
+        
+        when(userRepo.findByEmail("test@test.com")).thenReturn(Optional.of(currentUser));
+        when(userRepo.findAll()).thenReturn(Arrays.asList(currentUser, target1, target2, target3));
+        when(userMapper.toDto(target1)).thenReturn(new UserResponse());
+        
+        List<UserResponse> results = userService.searchUsers("test@test.com");
+        
+        assertEquals(1, results.size());
+        verify(userMapper, times(1)).toDto(target1);
+    }
+    
+    @Test
+    void testSearchUsers_AnyGender() {
+        User currentUser = new User();
+        currentUser.setId(1);
+        currentUser.setEmail("test@test.com");
+        UserPreferences prefs = new UserPreferences();
+        prefs.setMinAge(20);
+        prefs.setMaxAge(30);
+        prefs.setTargetGender("ANY");
+        currentUser.setPreferences(prefs);
+        
+        User target1 = new User();
+        target1.setId(2);
+        target1.setSex(Sex.FEMALE);
+        target1.setDateOfBirth(DateTime.now().minusYears(25).toDate());
+        
+        User target2 = new User();
+        target2.setId(3);
+        target2.setSex(Sex.MALE);
+        target2.setDateOfBirth(DateTime.now().minusYears(25).toDate());
+        
+        when(userRepo.findByEmail("test@test.com")).thenReturn(Optional.of(currentUser));
+        when(userRepo.findAll()).thenReturn(Arrays.asList(currentUser, target1, target2));
+        when(userMapper.toDto(any())).thenReturn(new UserResponse());
+        
+        List<UserResponse> results = userService.searchUsers("test@test.com");
+        
+        assertEquals(2, results.size());
+    }
+
+    @Test
+    void testFindById_Success() {
+        User user = new User();
+        user.setId(1);
+        when(userRepo.findById(1)).thenReturn(Optional.of(user));
+        
+        User result = userService.findById(1);
+        
+        assertNotNull(result);
+        assertEquals(1, result.getId());
+    }
+
+    @Test
+    void testFindById_NotFound() {
+        when(userRepo.findById(1)).thenReturn(Optional.empty());
+        
+        ServiceException exception = assertThrows(ServiceException.class, () -> userService.findById(1));
+        assertEquals(HttpStatus.NOT_FOUND, exception.getHttpCode());
+    }
+
+    // Include all previously existing tests below...
 
     @Test
     void testFindByMail_Success() {
