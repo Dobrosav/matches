@@ -1,4 +1,5 @@
 package com.dobrosav.matches.service;
+import com.dobrosav.matches.AbstractIntegrationTest;
 
 import com.dobrosav.matches.api.model.request.UserRequest;
 import com.dobrosav.matches.api.model.response.MatchResponse;
@@ -16,14 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.Date;
 import java.util.List;
@@ -31,16 +25,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-@Testcontainers
-public class UserServiceTest {
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0.33");
-
-    @Container
-    static GenericContainer<?> redis = new GenericContainer<>("redis:7.2")
-            .withExposedPorts(6379);
+public class UserServiceTest extends AbstractIntegrationTest {
 
     @Autowired
     private UserService userService;
@@ -72,16 +57,6 @@ public class UserServiceTest {
     @Autowired
     private RefreshTokenRepository refreshTokenRepo;
 
-    @DynamicPropertySource
-    static void configureProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", mysql::getJdbcUrl);
-        registry.add("spring.datasource.username", mysql::getUsername);
-        registry.add("spring.datasource.password", mysql::getPassword);
-        registry.add("spring.jpa.hibernate.ddl-auto", () -> "update");
-
-        registry.add("spring.data.redis.host", redis::getHost);
-        registry.add("spring.data.redis.port", () -> String.valueOf(redis.getMappedPort(6379)));
-    }
 
     @BeforeEach
     void setUp() {
