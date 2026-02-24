@@ -24,9 +24,8 @@ class CustomTextField extends StatelessWidget {
       controller: controller,
       decoration: InputDecoration(
         labelText: label,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        // Using theme defaults for border and focus to ensure a11y across light/dark mode
         filled: true,
-        fillColor: Colors.white,
       ),
       obscureText: obscureText,
       maxLines: maxLines,

@@ -306,45 +306,14 @@ public class UserService {
         userLikeRepo.findByLiker(currentUser).forEach(like -> excludedUserIds.add(like.getLiked().getId()));
         userDislikeRepo.findByDisliker(currentUser).forEach(dislike -> excludedUserIds.add(dislike.getDisliked().getId()));
         userMatchRepo.findAllMatchesForUser(currentUser).forEach(match -> {
-            excludedUserIds.add(match.getUser1().getId());
             excludedUserIds.add(match.getUser2().getId());
         });
 
         List<String> allowedLocations = new ArrayList<>();
-
-        if (!Boolean.TRUE.equals(currentUser.getPremium())) {
-            // Non-premium user MUST have a location to see feed
-            if (currentUser.getLocation() == null || currentUser.getLocation().isEmpty()) {
-                return new ArrayList<>(); // Return empty list, frontend will handle UI
-            }
-
-            // Find country for user's location
-            String country = CitiesData.getCountryForCity(currentUser.getLocation());
-            if (country != null) {
-                // Add all cities from that country to allowed locations
-                allowedLocations.addAll(CitiesData.CITIES_BY_COUNTRY.get(country));
-            } else {
-                // Fallback, just the user's city
-                allowedLocations.add(currentUser.getLocation());
-            }
-
-            // If user selected a specific location filter, and it's within their allowed locations, use it
-            if (location != null && !location.isEmpty()) {
-                if (allowedLocations.contains(location)) {
-                    allowedLocations.clear();
-                    allowedLocations.add(location);
-                } else {
-                    // Filtered location is not in their country, return empty
-                    return new ArrayList<>();
-                }
-            }
-        } else {
-            // Premium user
-            if (location != null && !location.isEmpty()) {
-                allowedLocations.add(location);
-            }
+        
+        if (location != null && !location.isEmpty() && !location.equalsIgnoreCase("Any")) {
+            allowedLocations.add(location);
         }
-
         Specification<User> spec = UserSpecification.filter(excludedUserIds, gender, minAge, maxAge, allowedLocations);
 
         Pageable pageable = PageRequest.of(0, 25);

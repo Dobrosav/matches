@@ -46,6 +46,7 @@ class ReactionServiceTest {
 
         when(userRepo.findByEmail("from@example.com")).thenReturn(Optional.of(fromUser));
         when(userRepo.findByEmail("to@example.com")).thenReturn(Optional.of(toUser));
+        when(userLikeRepo.findByLikerAndLiked(fromUser, toUser)).thenReturn(Optional.empty());
         when(userLikeRepo.findByLikerAndLiked(toUser, fromUser)).thenReturn(Optional.empty());
 
         reactionService.processReaction("from@example.com", "to@example.com", "like");
@@ -63,6 +64,7 @@ class ReactionServiceTest {
 
         when(userRepo.findByEmail("from@example.com")).thenReturn(Optional.of(fromUser));
         when(userRepo.findByEmail("to@example.com")).thenReturn(Optional.of(toUser));
+        when(userLikeRepo.findByLikerAndLiked(fromUser, toUser)).thenReturn(Optional.empty());
         when(userLikeRepo.findByLikerAndLiked(toUser, fromUser)).thenReturn(Optional.of(new UserLike()));
 
         reactionService.processReaction("from@example.com", "to@example.com", "like");

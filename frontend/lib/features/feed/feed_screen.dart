@@ -142,43 +142,12 @@ class _FeedScreenState extends State<FeedScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list),
+            tooltip: 'Filter users',
             onPressed: _showFilterDialog,
           ),
         ],
       ),
-      body:
-          (!widget.isPremium &&
-              (widget.userLocation == null || widget.userLocation!.isEmpty))
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.location_off,
-                      size: 64,
-                      color: Colors.grey,
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Location Required',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Please set your location in your profile to discover people near you.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 16),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          : _isLoading
+      body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
           ? Center(child: Text('Error: $_errorMessage'))
@@ -213,27 +182,37 @@ class _FeedScreenState extends State<FeedScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      IconButton(
-                        icon: const Icon(
-                          Icons.close,
-                          color: Colors.red,
-                          size: 40,
+                      Semantics(
+                        label: 'Pass user',
+                        button: true,
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.close,
+                            color: Colors.red,
+                            size: 40,
+                          ),
+                          tooltip: 'Pass',
+                          onPressed: () {
+                            _handleReaction('dislike');
+                            _swiperController.next();
+                          },
                         ),
-                        onPressed: () {
-                          _handleReaction('dislike');
-                          _swiperController.next();
-                        },
                       ),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.favorite,
-                          color: Colors.green,
-                          size: 40,
+                      Semantics(
+                        label: 'Like user',
+                        button: true,
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.favorite,
+                            color: Colors.green,
+                            size: 40,
+                          ),
+                          tooltip: 'Like',
+                          onPressed: () {
+                            _handleReaction('like');
+                            _swiperController.next();
+                          },
                         ),
-                        onPressed: () {
-                          _handleReaction('like');
-                          _swiperController.next();
-                        },
                       ),
                     ],
                   ),

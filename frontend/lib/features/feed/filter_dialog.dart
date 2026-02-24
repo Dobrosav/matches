@@ -41,37 +41,10 @@ class _FilterDialogState extends State<FilterDialog> {
 
   @override
   Widget build(BuildContext context) {
-    List<String> locationOptions = ['Any'];
-
-    if (widget.isPremium) {
-      // Generate a flat list of all cities across all countries and sort them alphabetically
-      final List<String> allCities =
-          citiesByCountry.values.expand((cities) => cities).toList()..sort();
-      locationOptions.addAll(allCities);
-    } else {
-      // Find the user's country
-      String? userCountry;
-      if (widget.userLocation != null && widget.userLocation!.isNotEmpty) {
-        for (var entry in citiesByCountry.entries) {
-          if (entry.value.contains(widget.userLocation)) {
-            userCountry = entry.key;
-            break;
-          }
-        }
-      }
-
-      if (userCountry != null) {
-        final List<String> countryCities = List.from(
-          citiesByCountry[userCountry]!,
-        )..sort();
-        locationOptions.addAll(countryCities);
-      } else if (widget.userLocation != null &&
-          widget.userLocation!.isNotEmpty) {
-        // Fallback if country not found but location exists
-        locationOptions.add(widget.userLocation!);
-      }
-    }
-
+    List<String> locationOptions = ["Any"];
+    final List<String> allCities =
+        citiesByCountry.values.expand((cities) => cities).toList()..sort();
+    locationOptions.addAll(allCities);
     // Ensure selected location is in the list, otherwise default to 'Any'
     if (!locationOptions.contains(_selectedLocation)) {
       _selectedLocation = 'Any';
